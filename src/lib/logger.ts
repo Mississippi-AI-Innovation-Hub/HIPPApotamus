@@ -24,10 +24,8 @@ function emit(level: LogLevel, message: string, context?: Record<string, unknown
     const color = LEVEL_COLORS[level];
     const prefix = `${color}[${timestamp}] [${level.toUpperCase()}]${RESET}`;
     if (context !== undefined) {
-      // eslint-disable-next-line no-console
       console[level === "debug" ? "log" : level](`${prefix} ${message}`, context);
     } else {
-      // eslint-disable-next-line no-console
       console[level === "debug" ? "log" : level](`${prefix} ${message}`);
     }
     return;
@@ -35,7 +33,6 @@ function emit(level: LogLevel, message: string, context?: Record<string, unknown
 
   // Production: structured JSON for CloudWatch Logs Insights
   const entry: LogEntry = { level, message, timestamp, ...(context && { context }) };
-  // eslint-disable-next-line no-console
   console[level === "debug" ? "log" : level](JSON.stringify(entry));
 }
 
