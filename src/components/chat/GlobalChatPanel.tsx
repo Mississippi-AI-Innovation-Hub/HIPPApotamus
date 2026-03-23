@@ -27,7 +27,7 @@ export default function GlobalChatPanel() {
       {/* Floating toggle button */}
       <button
         onClick={togglePanel}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-teal-600 text-white shadow-lg transition-all hover:bg-teal-700 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#0F766E] text-white shadow-lg transition-all hover:bg-[#0D6560] hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/30 focus:ring-offset-2"
         aria-label={isOpen ? "Close AI assistant" : "Open AI assistant"}
       >
         {isOpen ? (
@@ -71,7 +71,7 @@ export default function GlobalChatPanel() {
                 <button
                   key={prompt}
                   onClick={() => handleQuickPrompt(prompt)}
-                  className="rounded-full border border-teal-200 bg-white px-3 py-1 text-xs text-teal-700 transition-colors hover:bg-teal-50"
+                  className="rounded-full border border-[#0F766E]/20 bg-white px-3 py-1.5 text-xs text-[#0F766E] transition-colors hover:bg-[#CCFBF1]"
                 >
                   {prompt}
                 </button>

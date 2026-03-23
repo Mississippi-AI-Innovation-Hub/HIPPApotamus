@@ -186,7 +186,7 @@ export default function ChatPanel({
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
         <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-teal-500" />
+          <div className="h-2 w-2 rounded-full bg-[#0F766E]" />
           <span className="text-sm font-medium text-slate-700">
             AI Assistant
           </span>
@@ -217,7 +217,7 @@ export default function ChatPanel({
               className={`rounded-lg px-3 py-2 text-sm ${
                 msg.role === "user"
                   ? "ml-8 bg-slate-100 text-slate-800"
-                  : "mr-8 bg-teal-50 text-teal-900"
+                  : "mr-8 bg-[#CCFBF1] text-slate-900"
               }`}
             >
               <p className="mb-0.5 text-xs font-medium opacity-60">
@@ -225,7 +225,7 @@ export default function ChatPanel({
               </p>
               <div className="whitespace-pre-wrap">{msg.content}</div>
               {msg.role === "assistant" && msg.content === "" && isStreaming && (
-                <span className="inline-block animate-pulse text-teal-400">
+                <span className="inline-block animate-pulse text-[#0F766E]/60">
                   Thinking...
                 </span>
               )}
@@ -260,12 +260,12 @@ export default function ChatPanel({
           onChange={(e) => setInput(e.target.value)}
           disabled={isStreaming}
           placeholder={placeholder}
-          className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-teal-400 focus:outline-none focus:ring-1 focus:ring-teal-400 disabled:opacity-50"
+          className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-[#0F766E] focus:outline-none focus:ring-1 focus:ring-[#0F766E]/20 disabled:opacity-50"
         />
         <button
           type="submit"
           disabled={isStreaming || !input.trim()}
-          className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg bg-[#0F766E] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0D6560] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isStreaming ? "..." : "Send"}
         </button>

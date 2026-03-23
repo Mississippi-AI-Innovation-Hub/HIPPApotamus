@@ -218,7 +218,7 @@ export default function SigningInterface({
         {/* Header */}
         <div className="mb-8 border-b border-slate-200 pb-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0F766E]">
               <svg
                 className="h-5 w-5 text-white"
                 fill="none"
@@ -234,7 +234,7 @@ export default function SigningInterface({
               </svg>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900">
+              <h1 className="text-xl text-slate-900" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
                 HIPAApotamus
               </h1>
               <p className="text-xs text-slate-500">
@@ -388,7 +388,7 @@ export default function SigningInterface({
             <div className="rounded-xl bg-teal-50 p-6 text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
                 <svg
-                  className="h-6 w-6 text-teal-600"
+                  className="h-6 w-6 text-[#0F766E]"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -446,7 +446,7 @@ export default function SigningInterface({
                   type="checkbox"
                   checked={agreedToTerms}
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#0F766E] focus:ring-[#0F766E]/20"
                 />
                 <span className="text-xs leading-relaxed text-slate-600">
                   I have read and agree to the terms of this Business Associate
@@ -466,7 +466,7 @@ export default function SigningInterface({
               <button
                 onClick={handleSign}
                 disabled={!hasSignature || !agreedToTerms || isSubmitting}
-                className="mt-4 w-full rounded-lg bg-teal-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-4 w-full rounded-lg bg-[#0F766E] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0D6560] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">
