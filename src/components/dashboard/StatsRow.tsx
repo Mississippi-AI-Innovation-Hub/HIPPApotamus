@@ -44,7 +44,7 @@ function StatCard({
       <CardContent className="p-0">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
               {label}
             </p>
             <p
@@ -59,7 +59,7 @@ function StatCard({
               style={{ background: sparklineGradient }}
             />
             {indicator && (
-              <p className="mt-2 text-xs text-muted-foreground">{indicator}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{indicator}</p>
             )}
           </div>
           <div

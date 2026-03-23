@@ -144,7 +144,7 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
               key={f.key}
               variant={filter === f.key ? "default" : "outline"}
               size="sm"
-              className={`rounded-full ${filter === f.key ? "shadow-sm" : ""}`}
+              className={`rounded-full text-sm ${filter === f.key ? "shadow-sm bg-[#0F766E] text-white hover:bg-[#0D6560]" : ""}`}
               onClick={() => setFilter(f.key)}
             >
               {f.label}
@@ -181,22 +181,22 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/30">
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">
               Vendor
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">
               Type
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">
               Status
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">
               Effective
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">
               Expires
             </TableHead>
-            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <TableHead className="text-[13px] font-semibold uppercase tracking-wider text-muted-foreground">
               Days Left
             </TableHead>
           </TableRow>
@@ -204,7 +204,7 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
         <TableBody>
           {filteredBAAs.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
+              <TableCell colSpan={6} className="py-12 text-center text-[15px] text-muted-foreground">
                 No contracts match the current filters.
               </TableCell>
             </TableRow>
@@ -227,23 +227,23 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
                   }}
                 >
                   <TableCell>
-                    <div className="text-sm font-semibold text-foreground">
+                    <div className="text-base font-semibold text-foreground">
                       {getVendorName(vendors, baa.vendorId)}
                     </div>
-                    <div className="font-mono text-xs text-muted-foreground">
+                    <div className="font-mono text-[15px] text-muted-foreground">
                       {baa.id}
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="text-[15px] text-muted-foreground">
                     {getVendorType(vendors, baa.vendorId)}
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={baa.status} />
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="text-[15px] text-muted-foreground">
                     {formatDate(baa.effectiveDate)}
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="text-[15px] text-muted-foreground">
                     {formatDate(baa.expirationDate)}
                   </TableCell>
                   <TableCell>
@@ -270,7 +270,7 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
 
 function DaysIndicator({ days, status }: { days: number; status: BAAStatus }) {
   if (status === "pending_signature") {
-    return <span className="text-sm text-muted-foreground">--</span>;
+    return <span className="text-[15px] text-muted-foreground">--</span>;
   }
 
   if (days < 0) {
@@ -292,5 +292,5 @@ function DaysIndicator({ days, status }: { days: number; status: BAAStatus }) {
     return <span className="text-sm font-semibold text-warning">{days}d</span>;
   }
 
-  return <span className="text-sm text-muted-foreground">{days}d</span>;
+  return <span className="text-[15px] text-muted-foreground">{days}d</span>;
 }
