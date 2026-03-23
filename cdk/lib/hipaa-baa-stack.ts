@@ -39,8 +39,8 @@ export class HipaaBaaStack extends Stack {
     // ─── Resource 1: DynamoDB Table ────────────────────────────────────
     this.table = new dynamodb.TableV2(this, "HipaaBaaTable", {
       tableName: tableNameParam.valueAsString,
-      partitionKey: { name: "pk", type: dynamodb.AttributeType.STRING },
-      sortKey: { name: "sk", type: dynamodb.AttributeType.STRING },
+      partitionKey: { name: "PK", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "SK", type: dynamodb.AttributeType.STRING },
       billing: dynamodb.Billing.onDemand(),
       encryption: dynamodb.TableEncryptionV2.awsManagedKey(),
       pointInTimeRecovery: true,
@@ -187,7 +187,7 @@ export class HipaaBaaStack extends Stack {
         new iam.ServicePrincipal("ecs-tasks.amazonaws.com")
       ),
       description:
-        "Application role for HIPAApotamus — grants access to DynamoDB, S3, SES, Secrets Manager, and Cognito",
+        "Application role for HIPAApotamus - grants access to DynamoDB, S3, SES, Secrets Manager, and Cognito",
     });
 
     // DynamoDB CRUD

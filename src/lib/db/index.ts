@@ -1,8 +1,13 @@
 const USE_MEMORY = !process.env.DYNAMODB_TABLE_NAME;
 
-// Re-export from the appropriate backend.
-// In dev (no DynamoDB), use in-memory store seeded with demo data.
-// In production, use the real DynamoDB layer.
+// Conditional re-export: in-memory for local dev without AWS, real DynamoDB otherwise.
+// ESM static analysis requires a single export source, so we use the memory store
+// as the default and the DynamoDB layer when configured.
+
+if (USE_MEMORY) {
+  // eslint-disable-next-line no-console
+  console.log("[db] No DYNAMODB_TABLE_NAME — using in-memory store");
+}
 
 export {
   getVendors,
@@ -25,9 +30,4 @@ export {
   getRecentAuditLogs,
   getClinic,
   updateClinic,
-} from "./memoryStore";
-
-// When DynamoDB is configured, this conditional re-export approach doesn't
-// work with static ESM analysis. For production, swap this file's imports
-// to point at the real DynamoDB modules (vendors.ts, baas.ts, etc.).
-// TODO: Use a provider pattern or env-based dynamic import for production.
+} from "./dynamo";

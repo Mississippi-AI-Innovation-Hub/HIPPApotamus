@@ -6,15 +6,15 @@ const USE_DEV_AUTH = !process.env.COGNITO_USER_POOL_ID;
 
 // Dev-mode users (no Cognito required)
 const DEV_USERS: Record<string, { password: string; id: string; name: string; role: "admin" | "vendor"; entityId: string }> = {
-  "admin@msdh.ms.gov": {
-    password: "admin123",
+  "hipaaadmin@gmail.com": {
+    password: "Test@123",
     id: "dev-admin-001",
     name: "Dr. Sarah Mitchell",
     role: "admin",
     entityId: "clinic-mdh-001",
   },
-  "vendor@test.com": {
-    password: "vendor123",
+  "hipaavendor@gmail.com": {
+    password: "Test@123",
     id: "dev-vendor-001",
     name: "CareCloud Contact",
     role: "vendor",

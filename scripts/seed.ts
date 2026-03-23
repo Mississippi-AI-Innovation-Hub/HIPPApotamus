@@ -14,7 +14,7 @@ import type {
   BAAStatus,
 } from "../src/types";
 
-const CLINIC_ID = "clinic-001";
+const CLINIC_ID = "clinic-mdh-001";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

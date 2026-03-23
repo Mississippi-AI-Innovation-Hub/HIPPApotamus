@@ -43,9 +43,9 @@ let clientInstance: CognitoIdentityProviderClient | null = null;
 
 function getClient(): CognitoIdentityProviderClient {
   if (!clientInstance) {
-    const region = process.env.AWS_COGNITO_REGION;
+    const region = process.env.AWS_REGION;
     if (!region) {
-      throw new AuthError("AWS_COGNITO_REGION is not configured", "CONFIG_ERROR");
+      throw new AuthError("AWS_REGION is not configured", "CONFIG_ERROR");
     }
     clientInstance = new CognitoIdentityProviderClient({ region });
   }
@@ -71,9 +71,9 @@ export async function authenticateWithCognito(
   email: string,
   password: string,
 ): Promise<CognitoAuthResult> {
-  const clientId = process.env.AWS_COGNITO_CLIENT_ID;
+  const clientId = process.env.COGNITO_CLIENT_ID;
   if (!clientId) {
-    throw new AuthError("AWS_COGNITO_CLIENT_ID is not configured", "CONFIG_ERROR");
+    throw new AuthError("COGNITO_CLIENT_ID is not configured", "CONFIG_ERROR");
   }
 
   try {

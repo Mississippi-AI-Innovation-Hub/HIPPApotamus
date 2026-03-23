@@ -7,6 +7,10 @@ let clientInstance: OpenAI | null = null;
  * Returns a singleton OpenAI client. The API key is read from the
  * OPENAI_API_KEY environment variable at first access.
  */
+export function isAIAvailable(): boolean {
+  return !!process.env.OPENAI_API_KEY;
+}
+
 export function getOpenAIClient(): OpenAI {
   if (!clientInstance) {
     const apiKey = process.env.OPENAI_API_KEY;

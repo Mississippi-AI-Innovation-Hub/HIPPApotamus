@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getOpenAIClient, AI_MODEL } from "@/lib/ai/openai";
+import { getOpenAIClient, AI_MODEL, isAIAvailable } from "@/lib/ai/openai";
 import {
   contractAgentPrompt,
   vendorAgentPrompt,
@@ -46,6 +46,14 @@ export async function POST(
 ): Promise<NextResponse | Response> {
   try {
     const { context } = await params;
+
+    // Check AI availability
+    if (!isAIAvailable()) {
+      return NextResponse.json(
+        { error: "AI chat is not available. Set OPENAI_API_KEY in .env.local to enable." },
+        { status: 503 },
+      );
+    }
 
     // Validate context
     if (!isValidContext(context)) {
