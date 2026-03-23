@@ -74,9 +74,24 @@ const STATUS_LABELS: Record<BAAStatus, string> = {
   pending_signature: "Pending Signature",
 };
 
+const STATUS_DOT_COLORS: Record<BAAStatus, string> = {
+  active: "bg-emerald-500",
+  expiring_soon: "bg-amber-500",
+  expired: "bg-red-600",
+  pending_signature: "bg-blue-500",
+};
+
+const STATUS_BORDER_COLORS: Record<BAAStatus, string> = {
+  active: "#15803D",
+  expiring_soon: "#B45309",
+  expired: "#B91C1C",
+  pending_signature: "#1D4ED8",
+};
+
 function StatusBadge({ status }: { status: BAAStatus }) {
   return (
     <Badge variant={STATUS_BADGE_VARIANT[status]}>
+      <span className={`inline-block h-1.5 w-1.5 rounded-full mr-1.5 ${STATUS_DOT_COLORS[status]}`} />
       {STATUS_LABELS[status]}
     </Badge>
   );
@@ -119,7 +134,7 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
   }, [baas, vendors, filter, search]);
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+    <div className="shadow-premium overflow-hidden rounded-xl bg-card">
       {/* Toolbar */}
       <div className="flex flex-col gap-4 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Filter pills */}
@@ -129,7 +144,7 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
               key={f.key}
               variant={filter === f.key ? "default" : "outline"}
               size="sm"
-              className="rounded-full"
+              className={`rounded-full ${filter === f.key ? "shadow-sm" : ""}`}
               onClick={() => setFilter(f.key)}
             >
               {f.label}
@@ -157,7 +172,7 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
             placeholder="Search vendors..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 sm:w-64"
+            className="rounded-xl pl-9 focus:ring-2 focus:ring-primary/20 sm:w-64"
           />
         </div>
       </div>
@@ -165,7 +180,7 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
       {/* Table */}
       <Table>
         <TableHeader>
-          <TableRow className="bg-muted/50">
+          <TableRow className="bg-muted/30">
             <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Vendor
             </TableHead>
@@ -200,7 +215,8 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
                 <TableRow
                   key={baa.id}
                   onClick={() => onSelectBAA(baa)}
-                  className="cursor-pointer hover:bg-muted/50"
+                  className="cursor-pointer border-l-[3px] transition-colors hover:bg-primary/5"
+                  style={{ borderLeftColor: STATUS_BORDER_COLORS[baa.status] }}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -241,7 +257,7 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
       </Table>
 
       {/* Footer */}
-      <div className="border-t border-border bg-muted/50 px-4 py-3">
+      <div className="border-t border-border px-4 py-3">
         <p className="text-xs text-muted-foreground">
           Showing {filteredBAAs.length} of {baas.length} contracts
         </p>
@@ -259,7 +275,7 @@ function DaysIndicator({ days, status }: { days: number; status: BAAStatus }) {
 
   if (days < 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-sm font-semibold text-destructive">
+      <span className="inline-flex items-center gap-1 rounded bg-destructive/5 px-2 py-0.5 text-sm font-semibold text-destructive">
         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
         </svg>

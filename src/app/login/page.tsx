@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -53,11 +52,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40">
-      <Card className="w-full max-w-md shadow-lg p-10 gap-0">
+    <div
+      className="flex min-h-screen items-center justify-center"
+      style={{
+        background: "radial-gradient(ellipse at center, rgba(15,118,110,0.05) 0%, transparent 70%), var(--background)",
+      }}
+    >
+      <Card className="w-full max-w-[420px] shadow-premium rounded-2xl p-8 gap-0">
         {/* Logo / Branding */}
-        <CardHeader className="flex flex-col items-center gap-0 px-0 pb-0">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary">
+        <CardHeader className="flex flex-col items-center gap-0 px-0 pb-0 pt-0">
+          <div
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary"
+            style={{ boxShadow: "0 4px 14px rgba(15,118,110,0.3)" }}
+          >
             <svg
               className="h-9 w-9 text-primary-foreground"
               fill="none"
@@ -74,26 +81,26 @@ export default function LoginPage() {
             </svg>
           </div>
           <h1
-            className="mt-5 text-[40px] font-bold tracking-tight text-foreground"
+            className="gradient-text mt-4 text-4xl font-black tracking-tight"
             style={{ fontFamily: "'Satoshi', sans-serif" }}
           >
             HIPAApotamus
           </h1>
-          <p className="mt-1.5 text-base text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             HIPAA BAA Management System
           </p>
         </CardHeader>
 
         {/* Error Message */}
         {error && (
-          <div className="mt-6 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-center text-sm text-destructive">
+          <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-center text-sm text-destructive">
             {error}
           </div>
         )}
 
         {/* Login Form */}
         <CardContent className="px-0 pt-0 pb-0">
-          <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
             <div>
               <label
                 htmlFor="email"
@@ -110,7 +117,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
-                className="mt-1.5 h-11 text-[15px] px-3"
+                className="mt-1.5 h-11 rounded-xl border-border text-[15px] px-3 focus:ring-2 focus:ring-primary/20"
                 placeholder="you@example.com"
               />
             </div>
@@ -131,7 +138,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
-                className="mt-1.5 h-11 text-[15px] px-3"
+                className="mt-1.5 h-11 rounded-xl border-border text-[15px] px-3 focus:ring-2 focus:ring-primary/20"
                 placeholder="Enter your password"
               />
             </div>
@@ -140,7 +147,10 @@ export default function LoginPage() {
               type="submit"
               disabled={isLoading}
               size="lg"
-              className="w-full h-11 text-[16px] font-semibold"
+              className="w-full h-12 rounded-xl text-base font-bold transition-transform active:scale-[0.98]"
+              style={{
+                background: "linear-gradient(to right, #0F766E, #14B8A6)",
+              }}
             >
               {isLoading ? (
                 <>
@@ -172,8 +182,6 @@ export default function LoginPage() {
             </Button>
           </form>
         </CardContent>
-
-        <Separator className="mt-8" />
 
         <CardFooter className="justify-center border-t-0 bg-transparent px-0 pb-0 pt-4">
           <p className="text-xs text-muted-foreground">

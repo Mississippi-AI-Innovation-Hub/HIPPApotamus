@@ -108,17 +108,28 @@ export default function Sidebar({
   return (
     <aside
       style={{ backgroundColor: "#0F172A" }}
-      className={`flex h-full flex-col border-r border-slate-700/50 transition-all duration-200 ${
+      className={`relative flex h-full flex-col border-r border-slate-700/50 transition-all duration-200 ${
         collapsed ? "w-16" : "w-64"
       }`}
     >
+      {/* Subtle gradient overlay at top */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-32"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(15,118,110,0.12) 0%, transparent 70%)",
+        }}
+      />
+
       {/* ── Brand ──────────────────────────────────────────────────────── */}
-      <div className="flex h-16 items-center border-b border-slate-700/50 px-4">
+      <div className="relative z-10 flex h-16 items-center border-b border-slate-700/50 px-4">
         <div className="flex items-center gap-3">
           {/* Shield icon */}
           <div
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-            style={{ backgroundColor: "#0F766E" }}
+            style={{
+              background: "linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)",
+            }}
           >
             <svg
               className="h-5 w-5"
@@ -138,22 +149,40 @@ export default function Sidebar({
           {!collapsed && (
             <div className="min-w-0">
               <h1
-                className="truncate text-lg font-bold"
+                className="flex items-center gap-1.5 truncate text-lg font-bold"
                 style={{
                   fontFamily: "'Satoshi', sans-serif",
                   color: "#F8FAFC",
                 }}
               >
+                <span
+                  style={{ color: "#14B8A6", fontSize: "14px" }}
+                  aria-hidden="true"
+                >
+                  &#10022;
+                </span>
                 HIPAApotamus
               </h1>
-              <p
-                className="truncate text-[11px] font-medium uppercase tracking-wider"
-                style={{
-                  color: "rgba(148,163,184,0.6)",
-                }}
-              >
-                BAA Management
-              </p>
+              <div className="flex items-center gap-2">
+                <p
+                  className="truncate text-[11px] font-medium uppercase tracking-wider"
+                  style={{
+                    color: "rgba(148,163,184,0.6)",
+                  }}
+                >
+                  BAA Management
+                </p>
+                <span
+                  className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                  style={{
+                    backgroundColor: "rgba(20,184,166,0.15)",
+                    color: "#14B8A6",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  v2.0
+                </span>
+              </div>
             </div>
           )}
         </div>
@@ -191,7 +220,7 @@ export default function Sidebar({
       </div>
 
       {/* ── Navigation ─────────────────────────────────────────────────── */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
+      <nav className="relative z-10 flex-1 overflow-y-auto px-3 py-4">
         {!collapsed && (
           <p
             className="mb-3 px-3 font-semibold uppercase"
@@ -199,6 +228,7 @@ export default function Sidebar({
               fontSize: "11px",
               letterSpacing: "0.1em",
               color: "rgba(148,163,184,0.5)",
+              fontFamily: "'Satoshi', sans-serif",
             }}
           >
             {userRole === "admin" ? "Administration" : "Vendor Portal"}
@@ -220,11 +250,11 @@ export default function Sidebar({
                 <button
                   type="button"
                   onClick={() => handleNavClick(item)}
-                  className={`group relative flex w-full items-center gap-3 py-2.5 text-sm font-medium transition-colors ${
-                    collapsed ? "justify-center rounded px-2" : "rounded px-3"
+                  className={`group relative flex w-full items-center gap-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                    collapsed ? "justify-center rounded px-2" : "rounded-lg px-3"
                   }`}
                   style={{
-                    borderRadius: "4px",
+                    fontFamily: "'Satoshi', sans-serif",
                     color: isActive ? "#F8FAFC" : "rgba(148,163,184,0.8)",
                     backgroundColor: isActive
                       ? "rgba(15,118,110,0.15)"
@@ -234,7 +264,7 @@ export default function Sidebar({
                     if (!isActive) {
                       e.currentTarget.style.color = "#F8FAFC";
                       e.currentTarget.style.backgroundColor =
-                        "rgba(148,163,184,0.08)";
+                        "rgba(255,255,255,0.05)";
                     }
                   }}
                   onMouseLeave={(e) => {
@@ -252,7 +282,8 @@ export default function Sidebar({
                       style={{
                         width: "3px",
                         height: "20px",
-                        backgroundColor: "#0F766E",
+                        background:
+                          "linear-gradient(180deg, #14B8A6 0%, #0F766E 100%)",
                         borderRadius: "0 2px 2px 0",
                       }}
                     />
@@ -283,20 +314,20 @@ export default function Sidebar({
 
       {/* ── User Footer ────────────────────────────────────────────────── */}
       <div
-        className="border-t px-3 py-3"
+        className="relative z-10 border-t px-3 py-3"
         style={{ borderColor: "rgba(148,163,184,0.15)" }}
       >
         <div
-          className={`flex items-center gap-3 rounded px-3 py-2 ${
+          className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
             collapsed ? "justify-center" : ""
           }`}
         >
-          {/* Avatar with initials */}
+          {/* Avatar with gradient initials */}
           <div
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
             style={{
-              backgroundColor: "rgba(15,118,110,0.3)",
-              color: "#14B8A6",
+              background: "linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)",
+              color: "#FFFFFF",
             }}
           >
             {initials}
@@ -305,7 +336,10 @@ export default function Sidebar({
             <div className="min-w-0 flex-1">
               <p
                 className="truncate text-[13px] font-medium"
-                style={{ color: "#F8FAFC" }}
+                style={{
+                  color: "#F8FAFC",
+                  fontFamily: "'Satoshi', sans-serif",
+                }}
               >
                 {userName}
               </p>
@@ -339,15 +373,14 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* Sign out */}
+        {/* Sign out — ghost with red hover */}
         <button
           type="button"
           onClick={handleSignOut}
-          className={`mt-1 flex w-full items-center gap-3 rounded py-2.5 text-[13px] font-medium transition-colors ${
+          className={`mt-1 flex w-full items-center gap-3 rounded-lg py-2.5 text-[13px] font-medium transition-all duration-150 ${
             collapsed ? "justify-center px-2" : "px-3"
           }`}
           style={{
-            borderRadius: "4px",
             color: "rgba(148,163,184,0.5)",
           }}
           onMouseEnter={(e) => {

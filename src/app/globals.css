@@ -95,3 +95,62 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* ─── Premium Utilities ─────────────────────────────────────────────────── */
+
+.gradient-text {
+  background: linear-gradient(135deg, #0F766E 0%, #14B8A6 50%, #0EA5E9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.shadow-premium {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 8px rgba(0,0,0,0.06), 0 12px 24px rgba(0,0,0,0.03);
+}
+
+.shadow-premium-hover {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06), 0 8px 16px rgba(0,0,0,0.08), 0 20px 40px rgba(0,0,0,0.04);
+}
+
+.card-hover {
+  transition: transform 180ms ease-out, box-shadow 180ms ease-out;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+}
+
+.dot-pattern {
+  background-image: radial-gradient(circle, rgba(15,118,110,0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.pulse-dot {
+  position: relative;
+}
+.pulse-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 currentColor; opacity: 0.4; }
+  100% { box-shadow: 0 0 0 8px currentColor; opacity: 0; }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 300ms ease-out both;
+}
+
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }

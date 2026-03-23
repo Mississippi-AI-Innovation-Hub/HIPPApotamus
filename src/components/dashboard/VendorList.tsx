@@ -34,6 +34,13 @@ const STATUS_DOT: Record<BAAStatus, string> = {
   pending_signature: "bg-muted-foreground",
 };
 
+const STATUS_BAR_COLORS: Record<BAAStatus, string> = {
+  active: "#15803D",
+  expiring_soon: "#B45309",
+  expired: "#B91C1C",
+  pending_signature: "#64748B",
+};
+
 const STATUS_TEXT: Record<BAAStatus, string> = {
   active: "Active",
   expiring_soon: "Expiring Soon",
@@ -131,10 +138,11 @@ export default function VendorList({ vendors, baas, onSelectVendor }: VendorList
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {filteredVendors.map((vendor) => {
             const baa = vendorBAAs.get(vendor.id);
+            const barColor = baa ? STATUS_BAR_COLORS[baa.status] : "#E2E8F0";
             return (
               <Card
                 key={vendor.id}
-                className="group cursor-pointer transition-all hover:border-primary/30 hover:shadow-md"
+                className="group card-hover shadow-premium cursor-pointer overflow-hidden rounded-xl transition-all hover:border-primary/30"
                 onClick={() => onSelectVendor(vendor)}
                 role="button"
                 tabIndex={0}
@@ -145,9 +153,18 @@ export default function VendorList({ vendors, baas, onSelectVendor }: VendorList
                   }
                 }}
               >
+                {/* Status indicator bar at the top */}
+                <div
+                  className="h-1 w-full"
+                  style={{ backgroundColor: barColor }}
+                />
+
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <CardTitle className="text-base font-semibold group-hover:text-primary">
+                    <CardTitle
+                      className="text-base font-bold group-hover:text-primary"
+                      style={{ fontFamily: "'Satoshi', sans-serif" }}
+                    >
                       {vendor.name}
                     </CardTitle>
                     <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
@@ -155,17 +172,17 @@ export default function VendorList({ vendors, baas, onSelectVendor }: VendorList
                     </span>
                   </div>
                 </CardHeader>
-                <CardContent className="pb-0">
+                <CardContent className="relative pb-0">
                   {/* Contact */}
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <svg className="h-3.5 w-3.5 shrink-0 text-primary/60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                       </svg>
                       <span className="truncate">{vendor.contactName}</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <svg className="h-3.5 w-3.5 shrink-0 text-primary/60" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
                       </svg>
                       <span className="truncate">{vendor.contactEmail}</span>
@@ -173,7 +190,9 @@ export default function VendorList({ vendors, baas, onSelectVendor }: VendorList
                   </div>
 
                   {/* Footer -- BAA status + activity */}
-                  <div className="mt-4 flex items-center justify-between border-t border-border pt-4 pb-4">
+                  <div className="relative mt-4 flex items-center justify-between border-t border-border pt-4 pb-4">
+                    {/* Subtle gradient bg at bottom */}
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-muted/20 to-transparent" />
                     {baa ? (
                       <div className="flex items-center gap-1.5">
                         <span className={`h-2 w-2 rounded-full ${STATUS_DOT[baa.status]}`} />
