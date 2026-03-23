@@ -142,7 +142,7 @@ export default function Sidebar({
                 style={{
                   fontFamily: "'Instrument Serif', Georgia, serif",
                   color: "#F8FAFC",
-                  fontSize: "16px",
+                  fontSize: "20px",
                   letterSpacing: "0.01em",
                 }}
               >
@@ -164,7 +164,7 @@ export default function Sidebar({
         <button
           type="button"
           onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto rounded p-1 transition-colors"
+          className="ml-auto rounded p-2 transition-colors"
           style={{ color: "rgba(148,163,184,0.6)" }}
           onMouseEnter={(e) => {
             e.currentTarget.style.color = "#F8FAFC";
@@ -224,7 +224,7 @@ export default function Sidebar({
                 <button
                   type="button"
                   onClick={() => handleNavClick(item)}
-                  className={`group relative flex w-full items-center gap-3 py-2 text-[13px] font-medium transition-colors ${
+                  className={`group relative flex w-full items-center gap-3 py-2.5 text-[13px] font-medium transition-colors ${
                     collapsed ? "justify-center rounded px-2" : "rounded px-3"
                   }`}
                   style={{
