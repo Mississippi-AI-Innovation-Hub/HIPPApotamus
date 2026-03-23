@@ -10,7 +10,7 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -60,40 +60,50 @@ function formatDate(dateStr: string): string {
 
 // ─── Status Badge ───────────────────────────────────────────────────────────
 
-const STATUS_BADGE_VARIANT: Record<BAAStatus, "default" | "secondary" | "destructive" | "outline"> = {
-  active: "default",
-  expiring_soon: "outline",
-  expired: "destructive",
-  pending_signature: "secondary",
-};
-
-const STATUS_LABELS: Record<BAAStatus, string> = {
-  active: "Active",
-  expiring_soon: "Expiring Soon",
-  expired: "Expired",
-  pending_signature: "Pending Signature",
-};
-
-const STATUS_DOT_COLORS: Record<BAAStatus, string> = {
-  active: "bg-emerald-500",
-  expiring_soon: "bg-amber-500",
-  expired: "bg-red-600",
-  pending_signature: "bg-blue-500",
-};
-
-const STATUS_BORDER_COLORS: Record<BAAStatus, string> = {
-  active: "#15803D",
-  expiring_soon: "#B45309",
-  expired: "#B91C1C",
-  pending_signature: "#1D4ED8",
+const STATUS_CONFIG: Record<BAAStatus, { label: string; bg: string; text: string; dot: string; border: string }> = {
+  active: {
+    label: "Active",
+    bg: "#DCFCE7",
+    text: "#15803D",
+    dot: "#15803D",
+    border: "#15803D",
+  },
+  expiring_soon: {
+    label: "Expiring Soon",
+    bg: "#FEF3C7",
+    text: "#92400E",
+    dot: "#B45309",
+    border: "#B45309",
+  },
+  expired: {
+    label: "Expired",
+    bg: "#FEE2E2",
+    text: "#991B1B",
+    dot: "#B91C1C",
+    border: "#B91C1C",
+  },
+  pending_signature: {
+    label: "Pending Signature",
+    bg: "#DBEAFE",
+    text: "#1E40AF",
+    dot: "#1D4ED8",
+    border: "#1D4ED8",
+  },
 };
 
 function StatusBadge({ status }: { status: BAAStatus }) {
+  const cfg = STATUS_CONFIG[status];
   return (
-    <Badge variant={STATUS_BADGE_VARIANT[status]}>
-      <span className={`inline-block h-1.5 w-1.5 rounded-full mr-1.5 ${STATUS_DOT_COLORS[status]}`} />
-      {STATUS_LABELS[status]}
-    </Badge>
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+      style={{ backgroundColor: cfg.bg, color: cfg.text }}
+    >
+      <span
+        className="h-1.5 w-1.5 rounded-full"
+        style={{ backgroundColor: cfg.dot }}
+      />
+      {cfg.label}
+    </span>
   );
 }
 
@@ -216,7 +226,7 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
                   key={baa.id}
                   onClick={() => onSelectBAA(baa)}
                   className="cursor-pointer border-l-[3px] transition-colors hover:bg-primary/5"
-                  style={{ borderLeftColor: STATUS_BORDER_COLORS[baa.status] }}
+                  style={{ borderLeftColor: STATUS_CONFIG[baa.status].border }}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -289,7 +299,7 @@ function DaysIndicator({ days, status }: { days: number; status: BAAStatus }) {
   }
 
   if (days <= 90) {
-    return <span className="text-sm font-semibold text-warning">{days}d</span>;
+    return <span className="text-sm font-semibold text-[#B45309]">{days}d</span>;
   }
 
   return <span className="text-[15px] text-muted-foreground">{days}d</span>;

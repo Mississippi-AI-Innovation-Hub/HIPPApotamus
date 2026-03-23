@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { AuditLog, BAA, BAAStatus, Vendor } from "@/types";
 import { useToast } from "@/components/ui/Toast";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
@@ -52,20 +52,13 @@ function formatVendorType(type: string): string {
     .join(" ");
 }
 
-// ─── Status Badge Variant ───────────────────────────────────────────────────
+// ─── Status Badge ───────────────────────────────────────────────────────────
 
-const STATUS_BADGE_VARIANT: Record<BAAStatus, "default" | "secondary" | "destructive" | "outline"> = {
-  active: "default",
-  expiring_soon: "outline",
-  expired: "destructive",
-  pending_signature: "secondary",
-};
-
-const STATUS_LABELS: Record<BAAStatus, string> = {
-  active: "Active",
-  expiring_soon: "Expiring Soon",
-  expired: "Expired",
-  pending_signature: "Pending Signature",
+const STATUS_CONFIG: Record<BAAStatus, { label: string; bg: string; text: string; dot: string }> = {
+  active: { label: "Active", bg: "#DCFCE7", text: "#15803D", dot: "#15803D" },
+  expiring_soon: { label: "Expiring Soon", bg: "#FEF3C7", text: "#92400E", dot: "#B45309" },
+  expired: { label: "Expired", bg: "#FEE2E2", text: "#991B1B", dot: "#B91C1C" },
+  pending_signature: { label: "Pending Signature", bg: "#DBEAFE", text: "#1E40AF", dot: "#1D4ED8" },
 };
 
 // ─── Status Timeline ────────────────────────────────────────────────────────
@@ -291,9 +284,13 @@ export default function BAADetailsModal({
               <h2 className="text-lg font-bold text-foreground">{vendor.name}</h2>
               <p className="text-sm text-muted-foreground">{formatVendorType(vendor.type)}</p>
             </div>
-            <Badge variant={STATUS_BADGE_VARIANT[baa.status]}>
-              {STATUS_LABELS[baa.status]}
-            </Badge>
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+              style={{ backgroundColor: STATUS_CONFIG[baa.status].bg, color: STATUS_CONFIG[baa.status].text }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: STATUS_CONFIG[baa.status].dot }} />
+              {STATUS_CONFIG[baa.status].label}
+            </span>
           </div>
           <button
             type="button"
@@ -334,7 +331,7 @@ export default function BAADetailsModal({
                 <DetailItem label="Term" value={`${baa.termYears} year${baa.termYears > 1 ? "s" : ""}`} />
               </div>
               {baa.requiresStateLawRetentionNotice && (
-                <div className="mt-3 rounded-lg border border-warning/20 bg-warning-light px-3 py-2 text-xs text-warning">
+                <div className="mt-3 rounded-lg border border-[#B45309]/20 bg-[#FEF3C7] px-3 py-2 text-xs text-[#B45309]">
                   <strong>MS State Law:</strong> This vendor requires 10-year medical records retention notice per Mississippi state law.
                 </div>
               )}
