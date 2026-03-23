@@ -203,15 +203,25 @@ export default function BAADetailsModal({
     }
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     try {
-      if (baa.documentUrl) {
-        addToast("Downloading PDF...", "info");
-      } else {
-        addToast("No PDF available for this contract", "warning");
+      addToast("Generating PDF...", "info");
+      const response = await fetch(`/api/pdf/${baa.id}`);
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
       }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `BAA-${baa.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      addToast("PDF downloaded", "success");
     } catch {
-      addToast("Failed to download PDF", "error");
+      addToast("Failed to generate PDF. PDF service may not be available.", "error");
     }
   };
 

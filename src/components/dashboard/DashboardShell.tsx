@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import type { AuditLog, BAA, Vendor } from "@/types";
+import type { AuditLog, BAA, UserRole, Vendor } from "@/types";
+import Sidebar from "@/components/dashboard/Sidebar";
 import StatsRow from "@/components/dashboard/StatsRow";
 import BAATable from "@/components/dashboard/BAATable";
 import BAADetailsModal from "@/components/dashboard/BAADetailsModal";
@@ -17,6 +18,9 @@ interface DashboardShellProps {
   vendors: Vendor[];
   baas: BAA[];
   auditLogs: AuditLog[];
+  userName: string;
+  userRole: UserRole;
+  userEmail: string;
 }
 
 type Tab = "contracts" | "vendors" | "reminders";
@@ -47,6 +51,9 @@ export default function DashboardShell({
   vendors,
   baas,
   auditLogs,
+  userName,
+  userRole,
+  userEmail,
 }: DashboardShellProps) {
   const [activeTab, setActiveTab] = useState<Tab>("contracts");
   const [selectedBAA, setSelectedBAA] = useState<BAA | null>(null);
@@ -93,7 +100,16 @@ export default function DashboardShell({
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-screen bg-slate-100">
+      <Sidebar
+        userName={userName}
+        userRole={userRole}
+        userEmail={userEmail}
+        onNavigate={(tab) => setActiveTab(tab as Tab)}
+        activeTab={activeTab}
+      />
+      <main className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
       {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -205,6 +221,8 @@ export default function DashboardShell({
 
       {/* Dev tools — hidden in production */}
       <DevTools />
+        </div>
+      </main>
     </div>
   );
 }

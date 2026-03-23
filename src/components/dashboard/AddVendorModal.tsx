@@ -136,7 +136,18 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
       const response = await fetch("/api/vendors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vendor, contract }),
+        body: JSON.stringify({
+          name: vendor.name,
+          type: vendor.type,
+          contactName: vendor.contactName,
+          contactEmail: vendor.contactEmail,
+          contactPhone: vendor.contactPhone,
+          address: vendor.address,
+          contractType: contract.contractType,
+          effectiveDate: contract.effectiveDate,
+          expirationDate: contract.expirationDate,
+          templateVersion: contract.templateVersion,
+        }),
       });
 
       if (!response.ok) {
