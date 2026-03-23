@@ -339,15 +339,21 @@ export default function DashboardShell({
                   <p className="text-xs font-medium text-emerald-300">Ready</p>
                 </div>
               </div>
-              {/* Collapse button — slide-away arrow */}
+              {/* Collapse tab — mirrors the edge-docked expand tab */}
               <button
                 onClick={() => setCopilotOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-400 backdrop-blur-sm transition-all duration-200 hover:border-white/20 hover:bg-white/10 hover:text-white active:scale-90"
+                className="group flex flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-1.5 py-3 text-slate-400 backdrop-blur-sm transition-all duration-200 hover:border-white/20 hover:bg-white/10 hover:text-white active:scale-95"
                 title="Collapse panel"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                <svg className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
                 </svg>
+                <span
+                  className="text-[9px] font-bold uppercase tracking-[0.12em]"
+                  style={{ writingMode: "vertical-lr" }}
+                >
+                  Close
+                </span>
               </button>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-slate-300">
