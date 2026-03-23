@@ -62,6 +62,35 @@ export default function DashboardShell({
   const [addVendorOpen, setAddVendorOpen] = useState(false);
   const [auditPacketOpen, setAuditPacketOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
+  const [copilotWidth, setCopilotWidth] = useState(380);
+  const [isResizing, setIsResizing] = useState(false);
+
+  // Drag-to-resize handler
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    const startX = e.clientX;
+    const startWidth = copilotWidth;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const delta = startX - moveEvent.clientX;
+      const newWidth = Math.min(Math.max(startWidth + delta, 320), 700);
+      setCopilotWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  }, [copilotWidth]);
 
   // Compute stats
   const stats = useMemo(() => {
@@ -251,12 +280,29 @@ export default function DashboardShell({
         </button>
       </div>
 
-      {/* Right: AI Compliance Agent Panel — collapsible */}
+      {/* Right: AI Compliance Agent Panel — collapsible + resizable */}
       <aside
-        className={`flex shrink-0 flex-col border-l border-border bg-card transition-all duration-300 ease-in-out ${
-          copilotOpen ? "w-[380px]" : "w-0 overflow-hidden border-l-0"
+        className={`relative flex shrink-0 flex-col border-l border-border bg-card ${
+          copilotOpen ? "" : "w-0 overflow-hidden border-l-0"
         }`}
+        style={copilotOpen ? {
+          width: `${copilotWidth}px`,
+          transition: isResizing ? "none" : "width 300ms ease-in-out",
+        } : {
+          width: 0,
+          transition: "width 300ms ease-in-out",
+        }}
       >
+        {/* Drag handle — left edge of panel */}
+        {copilotOpen && (
+          <div
+            onMouseDown={handleResizeStart}
+            className="absolute left-0 top-0 z-10 flex h-full w-1.5 cursor-col-resize items-center justify-center hover:w-2 group"
+            title="Drag to resize"
+          >
+            <div className="h-8 w-1 rounded-full bg-border opacity-0 transition-opacity group-hover:opacity-100" />
+          </div>
+        )}
         {/* Hero header — makes it immediately clear what this is */}
         <div
           className="relative overflow-hidden border-b border-border px-6 py-5"
@@ -293,14 +339,14 @@ export default function DashboardShell({
                   <p className="text-xs font-medium text-emerald-300">Ready</p>
                 </div>
               </div>
-              {/* Close button */}
+              {/* Collapse button — slide-away arrow */}
               <button
                 onClick={() => setCopilotOpen(false)}
-                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
-                title="Close HIPAA Copilot"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-400 backdrop-blur-sm transition-all duration-200 hover:border-white/20 hover:bg-white/10 hover:text-white active:scale-90"
+                title="Collapse panel"
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                 </svg>
               </button>
             </div>
