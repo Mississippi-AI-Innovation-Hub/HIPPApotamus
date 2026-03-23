@@ -91,25 +91,31 @@ function StatusTimeline({ status }: { status: BAAStatus }) {
         <div key={step.label} className="flex items-center">
           <div className="flex flex-col items-center">
             <div
-              className={`flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-bold transition-colors ${
+              className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors ${
                 step.active
-                  ? "border-primary bg-primary text-primary-foreground"
+                  ? "border-[#0F766E] bg-[#0F766E]"
                   : step.reached
-                    ? "border-primary/40 bg-primary/10 text-primary"
-                    : "border-border bg-muted text-muted-foreground"
+                    ? "border-[#0F766E]/40 bg-[#0F766E]/10"
+                    : "border-slate-200 bg-slate-50"
               }`}
             >
               {step.reached ? (
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={3}
+                  stroke={step.active ? "#FFFFFF" : "#0F766E"}
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                 </svg>
               ) : (
-                i + 1
+                <span className="h-2 w-2 rounded-full bg-slate-300" />
               )}
             </div>
             <span
-              className={`mt-1 text-[10px] font-medium ${
-                step.active ? "text-primary" : step.reached ? "text-foreground" : "text-muted-foreground"
+              className={`mt-1.5 text-[11px] font-semibold ${
+                step.active ? "text-[#0F766E]" : step.reached ? "text-foreground" : "text-muted-foreground"
               }`}
             >
               {step.label}
@@ -117,8 +123,8 @@ function StatusTimeline({ status }: { status: BAAStatus }) {
           </div>
           {i < steps.length - 1 && (
             <div
-              className={`mb-4 h-0.5 w-6 sm:w-8 ${
-                steps[i + 1].reached ? "bg-primary/40" : "bg-border"
+              className={`mb-5 h-0.5 w-8 sm:w-10 rounded-full ${
+                steps[i + 1].reached ? "bg-[#0F766E]/30" : "bg-slate-200"
               }`}
             />
           )}
