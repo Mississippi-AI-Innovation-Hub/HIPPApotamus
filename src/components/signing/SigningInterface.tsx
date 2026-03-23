@@ -385,8 +385,8 @@ export default function SigningInterface({
         {/* Signature area */}
         <div className="p-4">
           {submitResult?.success ? (
-            <div className="rounded-xl bg-teal-50 p-6 text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
+            <div className="rounded-xl bg-[#CCFBF1] p-6 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#CCFBF1]">
                 <svg
                   className="h-6 w-6 text-[#0F766E]"
                   fill="none"
@@ -401,7 +401,7 @@ export default function SigningInterface({
                   />
                 </svg>
               </div>
-              <p className="font-medium text-teal-800">
+              <p className="font-medium text-[#0F766E]">
                 {submitResult.message}
               </p>
             </div>

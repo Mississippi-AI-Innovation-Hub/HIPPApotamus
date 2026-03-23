@@ -197,7 +197,7 @@ export default function AuditPacketModal({
                   <button
                     type="button"
                     onClick={toggleAll}
-                    className="text-xs font-medium text-teal-600 transition-colors hover:text-teal-700"
+                    className="text-xs font-medium text-[#0F766E] transition-colors hover:text-[#0F766E]"
                   >
                     {allSelected ? "Deselect All" : "Select All"}
                   </button>
@@ -213,7 +213,7 @@ export default function AuditPacketModal({
                         if (el) el.indeterminate = someSelected;
                       }}
                       onChange={toggleAll}
-                      className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                      className="h-4 w-4 rounded border-slate-300 text-[#0F766E] focus:ring-[#0F766E]/20"
                     />
                     <span className="text-sm font-medium text-slate-700">
                       All Contracts ({baas.length})
@@ -231,7 +231,7 @@ export default function AuditPacketModal({
                         type="checkbox"
                         checked={selectedBAAIds.has(baa.id)}
                         onChange={() => toggleBAA(baa.id)}
-                        className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                        className="h-4 w-4 rounded border-slate-300 text-[#0F766E] focus:ring-[#0F766E]/20"
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm text-slate-700">
@@ -258,7 +258,7 @@ export default function AuditPacketModal({
                       type="date"
                       value={dateFrom}
                       onChange={(e) => setDateFrom(e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none transition-colors focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none transition-colors focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/10"
                     />
                   </label>
                   <label className="block">
@@ -267,7 +267,7 @@ export default function AuditPacketModal({
                       type="date"
                       value={dateTo}
                       onChange={(e) => setDateTo(e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none transition-colors focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none transition-colors focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/10"
                     />
                   </label>
                 </div>
@@ -305,20 +305,20 @@ export default function AuditPacketModal({
               {/* Progress */}
               {status === "generating" && (
                 <section>
-                  <div className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-4">
+                  <div className="rounded-lg border border-[#0F766E]/20 bg-[#CCFBF1] px-4 py-4">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="text-sm font-medium text-teal-700">
+                      <span className="text-sm font-medium text-[#0F766E]">
                         Generating packet...
                       </span>
-                      <span className="text-sm font-bold text-teal-700">{progress}%</span>
+                      <span className="text-sm font-bold text-[#0F766E]">{progress}%</span>
                     </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-teal-100">
+                    <div className="h-2 overflow-hidden rounded-full bg-[#CCFBF1]">
                       <div
-                        className="h-full rounded-full bg-teal-500 transition-all duration-300"
+                        className="h-full rounded-full bg-[#0F766E] transition-all duration-300"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
-                    <p className="mt-2 text-xs text-teal-600">
+                    <p className="mt-2 text-xs text-[#0F766E]">
                       Compiling documents and generating reports...
                     </p>
                   </div>
@@ -329,13 +329,13 @@ export default function AuditPacketModal({
               {status === "complete" && (
                 <section>
                   <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4 text-center">
-                    <svg className="mx-auto mb-2 h-8 w-8 text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <svg className="mx-auto mb-2 h-8 w-8 text-[#15803D]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                     </svg>
-                    <p className="text-sm font-medium text-emerald-700">
+                    <p className="text-sm font-medium text-[#15803D]">
                       Audit packet ready for download
                     </p>
-                    <p className="mt-1 text-xs text-emerald-600">
+                    <p className="mt-1 text-xs text-[#15803D]">
                       {selectedBAAIds.size} contract{selectedBAAIds.size !== 1 ? "s" : ""} included
                     </p>
                   </div>
@@ -370,7 +370,7 @@ export default function AuditPacketModal({
                 <button
                   type="button"
                   onClick={handleDownload}
-                  className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700"
+                  className="flex items-center gap-2 rounded-lg bg-[#15803D] px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#166534]"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -383,7 +383,7 @@ export default function AuditPacketModal({
                 <button
                   type="button"
                   onClick={handleGenerate}
-                  className="flex items-center gap-2 rounded-lg bg-teal-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
+                  className="flex items-center gap-2 rounded-lg bg-[#0F766E] px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0D6560]"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
@@ -418,7 +418,7 @@ function OptionToggle({
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#0F766E] focus:ring-[#0F766E]/20"
       />
       <div>
         <p className="text-sm font-medium text-slate-700">{label}</p>

@@ -127,7 +127,7 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
             type="button"
             onClick={handleScheduleAll}
             disabled={sendingAll}
-            className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex items-center gap-2 rounded-lg bg-[#0F766E] px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0D6560] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {sendingAll && (
               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -158,7 +158,7 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
       {/* Event List */}
       {reminderEvents.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
-          <svg className="mx-auto mb-3 h-10 w-10 text-emerald-300" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+          <svg className="mx-auto mb-3 h-10 w-10 text-[#15803D]/40" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
           </svg>
           <p className="text-sm font-medium text-slate-500">All caught up!</p>

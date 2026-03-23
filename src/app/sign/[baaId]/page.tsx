@@ -50,9 +50,9 @@ export default async function SignPage({ params }: SignPageProps) {
       return (
         <div className="flex min-h-screen items-center justify-center bg-slate-50">
           <div className="max-w-md rounded-xl bg-white p-8 text-center shadow-lg">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-teal-100">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#CCFBF1]">
               <svg
-                className="h-7 w-7 text-teal-600"
+                className="h-7 w-7 text-[#0F766E]"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
