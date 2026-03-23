@@ -303,6 +303,25 @@ export default function DashboardShell({
             <div className="h-8 w-1 rounded-full bg-border opacity-0 transition-opacity group-hover:opacity-100" />
           </div>
         )}
+
+        {/* Collapse tab — docked to left edge, vertically centered (mirrors expand tab) */}
+        {copilotOpen && (
+          <button
+            onClick={() => setCopilotOpen(false)}
+            className="group absolute -left-[30px] top-1/2 z-20 -translate-y-1/2 flex flex-col items-center gap-2 rounded-l-2xl border border-r-0 border-border bg-card px-2 py-5 shadow-premium transition-all duration-200 hover:px-3 hover:shadow-premium-hover"
+            title="Collapse HIPAA Copilot"
+          >
+            <svg className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-[#0F766E]" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+            </svg>
+            <span
+              className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground transition-colors group-hover:text-[#0F766E]"
+              style={{ writingMode: "vertical-lr" }}
+            >
+              Close
+            </span>
+          </button>
+        )}
         {/* Hero header — makes it immediately clear what this is */}
         <div
           className="relative overflow-hidden border-b border-border px-6 py-5"
@@ -339,22 +358,7 @@ export default function DashboardShell({
                   <p className="text-xs font-medium text-emerald-300">Ready</p>
                 </div>
               </div>
-              {/* Collapse tab — mirrors the edge-docked expand tab */}
-              <button
-                onClick={() => setCopilotOpen(false)}
-                className="group flex flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-1.5 py-3 text-slate-400 backdrop-blur-sm transition-all duration-200 hover:border-white/20 hover:bg-white/10 hover:text-white active:scale-95"
-                title="Collapse panel"
-              >
-                <svg className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                </svg>
-                <span
-                  className="text-[9px] font-bold uppercase tracking-[0.12em]"
-                  style={{ writingMode: "vertical-lr" }}
-                >
-                  Close
-                </span>
-              </button>
+              {/* Placeholder — close tab is docked to panel edge below */}
             </div>
             <p className="mt-3 text-sm leading-relaxed text-slate-300">
               Your AI-powered compliance assistant. Ask questions, run actions, or get insights — all from here.
