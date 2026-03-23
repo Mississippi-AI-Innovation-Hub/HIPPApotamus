@@ -497,7 +497,7 @@ export default function SigningInterface({
                   onClick={handleSign}
                   disabled={!hasSignature || !agreedToTerms || isSubmitting}
                   size="lg"
-                  className="mt-4 w-full h-11 text-[16px] font-semibold"
+                  className="mt-4 w-full h-11 text-[16px] font-semibold bg-[#0F766E] text-white hover:bg-[#0D6560]"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">

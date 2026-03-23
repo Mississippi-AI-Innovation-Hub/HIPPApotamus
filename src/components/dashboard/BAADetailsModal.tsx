@@ -399,7 +399,7 @@ export default function BAADetailsModal({
         {/* Footer — Actions */}
         <div className="border-t border-border bg-muted px-6 py-4">
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleSendReminder}>
+            <Button onClick={handleSendReminder} className="bg-[#0F766E] text-white hover:bg-[#0D6560]">
               Send Reminder
             </Button>
             <Button variant="outline" onClick={handleDownloadPDF}>

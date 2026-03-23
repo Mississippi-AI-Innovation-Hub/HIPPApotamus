@@ -322,11 +322,11 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
           )}
 
           {step === 1 ? (
-            <Button onClick={handleStep1Next}>
+            <Button onClick={handleStep1Next} className="bg-[#0F766E] text-white hover:bg-[#0D6560]">
               Next
             </Button>
           ) : (
-            <Button onClick={handleSubmit} disabled={submitting}>
+            <Button onClick={handleSubmit} disabled={submitting} className="bg-[#0F766E] text-white hover:bg-[#0D6560]">
               {submitting && (
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle

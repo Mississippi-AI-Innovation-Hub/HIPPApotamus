@@ -147,7 +147,7 @@ export default function LoginPage() {
               type="submit"
               disabled={isLoading}
               size="lg"
-              className="w-full h-12 rounded-xl text-base font-bold transition-transform active:scale-[0.98]"
+              className="w-full h-12 rounded-xl text-base font-bold text-white transition-transform active:scale-[0.98]"
               style={{
                 background: "linear-gradient(to right, #0F766E, #14B8A6)",
               }}
