@@ -246,7 +246,10 @@ export default function SigningInterface({
 
         {/* Contract content */}
         <div className="prose prose-slate max-w-none">
-          <h2 className="text-xl font-bold text-slate-900">
+          <h2
+            className="text-[22px] font-bold text-slate-900"
+            style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
+          >
             {CONTRACT_LABELS[contractType]}
           </h2>
 

@@ -151,7 +151,7 @@ export default function Sidebar({
               <p
                 className="truncate font-medium uppercase tracking-wider"
                 style={{
-                  fontSize: "10px",
+                  fontSize: "11px",
                   color: "rgba(148,163,184,0.8)",
                   letterSpacing: "0.08em",
                 }}
@@ -200,7 +200,7 @@ export default function Sidebar({
           <p
             className="mb-3 px-3 font-semibold uppercase"
             style={{
-              fontSize: "10px",
+              fontSize: "11px",
               letterSpacing: "0.1em",
               color: "rgba(148,163,184,0.5)",
             }}
@@ -317,7 +317,7 @@ export default function Sidebar({
                 <span
                   className="inline-block rounded px-1.5 py-0.5 font-bold uppercase"
                   style={{
-                    fontSize: "9px",
+                    fontSize: "10px",
                     letterSpacing: "0.05em",
                     borderRadius: "4px",
                     backgroundColor:
@@ -332,7 +332,7 @@ export default function Sidebar({
                 <span
                   className="truncate"
                   style={{
-                    fontSize: "10px",
+                    fontSize: "11px",
                     color: "rgba(148,163,184,0.6)",
                   }}
                 >

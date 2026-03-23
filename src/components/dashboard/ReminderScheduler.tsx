@@ -145,19 +145,19 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
         {[90, 60, 30, 7].map((d) => (
           <span
             key={d}
-            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${THRESHOLD_COLORS[d]}`}
+            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${THRESHOLD_COLORS[d]}`}
           >
             {d}-day
           </span>
         ))}
-        <span className="inline-flex items-center rounded-full border border-red-300 bg-red-50 px-2.5 py-0.5 text-[10px] font-semibold text-red-700">
+        <span className="inline-flex items-center rounded-full border border-red-300 bg-red-50 px-2.5 py-0.5 text-[11px] font-semibold text-red-700">
           Overdue
         </span>
       </div>
 
       {/* Event List */}
       {reminderEvents.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+        <div className="rounded-lg border border-slate-200 bg-white px-6 py-12 text-center">
           <svg className="mx-auto mb-3 h-10 w-10 text-[#15803D]/40" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
           </svg>
@@ -175,7 +175,7 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
             return (
               <div
                 key={event.baa.id}
-                className={`flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm transition-colors ${
+                className={`flex items-center gap-4 rounded-lg border bg-white p-4 shadow-sm transition-colors ${
                   isOverdue ? "border-red-200" : "border-slate-200"
                 }`}
               >
@@ -217,14 +217,14 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
                 {/* Threshold badges */}
                 <div className="hidden flex-wrap gap-1 sm:flex">
                   {isOverdue ? (
-                    <span className="inline-flex items-center rounded-full border border-red-300 bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-700">
+                    <span className="inline-flex items-center rounded-full border border-red-300 bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">
                       Overdue
                     </span>
                   ) : (
                     event.thresholds.map((t) => (
                       <span
                         key={t}
-                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${THRESHOLD_COLORS[t]}`}
+                        className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${THRESHOLD_COLORS[t]}`}
                       >
                         {t}d
                       </span>

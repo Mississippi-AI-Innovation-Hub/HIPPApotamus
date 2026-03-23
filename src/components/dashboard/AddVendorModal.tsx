@@ -429,7 +429,7 @@ function FormField({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+      <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
         {label}
         {required && <span className="ml-0.5 text-[#B91C1C]">*</span>}
       </span>

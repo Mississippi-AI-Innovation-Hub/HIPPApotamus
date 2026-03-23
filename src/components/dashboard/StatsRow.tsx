@@ -26,13 +26,16 @@ import type { ReactNode } from "react";
 
 function StatCard({ label, value, iconColor, iconBg, icon, indicator }: StatCardProps) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+    <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
             {label}
           </p>
-          <p className="mt-2 text-[28px] font-bold tabular-nums text-slate-900">
+          <p
+            className="mt-3 text-[32px] font-bold tabular-nums text-slate-900"
+            style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
+          >
             {value}
           </p>
           {indicator && (

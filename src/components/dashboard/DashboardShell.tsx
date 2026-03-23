@@ -109,14 +109,17 @@ export default function DashboardShell({
         activeTab={activeTab}
       />
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1100px] space-y-8 px-6 py-8 lg:px-10">
       {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">
+          <h1
+            className="text-2xl font-semibold text-slate-900"
+            style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
+          >
             BAA Management Dashboard
           </h1>
-          <p className="mt-0.5 text-xs text-slate-400">
+          <p className="mt-1 text-[11px] font-medium uppercase tracking-wider text-slate-400">
             HIPAA Compliance Overview
           </p>
         </div>

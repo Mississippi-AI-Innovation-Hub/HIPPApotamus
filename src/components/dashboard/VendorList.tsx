@@ -99,7 +99,7 @@ export default function VendorList({ vendors, baas, onSelectVendor }: VendorList
   return (
     <div>
       {/* Search */}
-      <div className="mb-4">
+      <div className="mb-6">
         <div className="relative">
           <svg
             className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
@@ -133,7 +133,7 @@ export default function VendorList({ vendors, baas, onSelectVendor }: VendorList
           <p className="text-sm text-slate-400">No vendors match your search.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {filteredVendors.map((vendor) => {
             const baa = vendorBAAs.get(vendor.id);
             return (
@@ -145,11 +145,11 @@ export default function VendorList({ vendors, baas, onSelectVendor }: VendorList
               >
                 {/* Header */}
                 <div className="flex items-start justify-between">
-                  <h3 className="text-sm font-bold text-slate-900 group-hover:text-[#0F766E]">
+                  <h3 className="text-base font-bold text-slate-900 group-hover:text-[#0F766E]">
                     {vendor.name}
                   </h3>
                   <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${TYPE_COLORS[vendor.type]}`}
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${TYPE_COLORS[vendor.type]}`}
                   >
                     {formatVendorType(vendor.type)}
                   </span>
@@ -183,7 +183,7 @@ export default function VendorList({ vendors, baas, onSelectVendor }: VendorList
                   ) : (
                     <span className="text-xs text-slate-400">No BAA</span>
                   )}
-                  <span className="text-[10px] text-slate-400">
+                  <span className="text-[11px] text-slate-400">
                     {formatRelativeTime(vendor.updatedAt)}
                   </span>
                 </div>

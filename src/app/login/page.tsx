@@ -50,12 +50,12 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
-      <div className="w-full max-w-[420px] rounded-lg bg-white p-8 shadow-sm border border-[#E2E8F0]">
+      <div className="w-full max-w-md rounded-lg bg-white p-10 shadow-md border border-[#E2E8F0]">
         {/* Logo / Branding */}
         <div className="text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-md bg-[#0F766E]">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-lg bg-[#0F766E]">
             <svg
-              className="h-8 w-8 text-white"
+              className="h-9 w-9 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -70,12 +70,12 @@ export default function LoginPage() {
             </svg>
           </div>
           <h1
-            className="mt-4 text-3xl tracking-tight text-[#0F172A]"
-            style={{ fontFamily: "'Instrument Serif', serif" }}
+            className="mt-5 text-4xl tracking-tight text-[#0F172A]"
+            style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
           >
             HIPAApotamus
           </h1>
-          <p className="mt-1 text-sm text-[#94A3B8]">
+          <p className="mt-1.5 text-base text-[#94A3B8]">
             HIPAA BAA Management System
           </p>
         </div>
@@ -88,12 +88,12 @@ export default function LoginPage() {
         )}
 
         {/* Login Form */}
-        <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+        <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
           <div>
             <label
               htmlFor="email"
               className="block text-sm font-medium text-[#475569]"
-              style={{ fontFamily: "'DM Sans', sans-serif" }}
+              
             >
               Email address
             </label>
@@ -106,8 +106,8 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
-              className="mt-1.5 block w-full rounded border border-[#E2E8F0] px-3 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F766E] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/10 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ fontFamily: "'DM Sans', sans-serif" }}
+              className="mt-1.5 block w-full rounded border border-[#E2E8F0] px-3 py-3 text-base text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F766E] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/10 disabled:cursor-not-allowed disabled:opacity-60"
+              
               placeholder="you@example.com"
             />
           </div>
@@ -116,7 +116,7 @@ export default function LoginPage() {
             <label
               htmlFor="password"
               className="block text-sm font-medium text-[#475569]"
-              style={{ fontFamily: "'DM Sans', sans-serif" }}
+              
             >
               Password
             </label>
@@ -129,8 +129,8 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
-              className="mt-1.5 block w-full rounded border border-[#E2E8F0] px-3 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F766E] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/10 disabled:cursor-not-allowed disabled:opacity-60"
-              style={{ fontFamily: "'DM Sans', sans-serif" }}
+              className="mt-1.5 block w-full rounded border border-[#E2E8F0] px-3 py-3 text-base text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F766E] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/10 disabled:cursor-not-allowed disabled:opacity-60"
+              
               placeholder="Enter your password"
             />
           </div>
@@ -138,8 +138,8 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="flex w-full items-center justify-center rounded bg-[#0F766E] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0D6560] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/10 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-            style={{ fontFamily: "'DM Sans', sans-serif" }}
+            className="flex w-full items-center justify-center rounded bg-[#0F766E] px-4 py-3 text-base font-semibold text-white transition-colors hover:bg-[#0D6560] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/10 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            
           >
             {isLoading ? (
               <>
@@ -171,7 +171,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="mt-8 text-center text-[#94A3B8]" style={{ fontSize: "11px", fontFamily: "'DM Sans', sans-serif" }}>
+        <p className="mt-10 text-center text-[#94A3B8]" style={{ fontSize: "11px", fontFamily: "'DM Sans', sans-serif" }}>
           Mississippi Department of Health &middot; Secure Access
         </p>
       </div>

@@ -96,7 +96,7 @@ function StatusTimeline({ status }: { status: BAAStatus }) {
               )}
             </div>
             <span
-              className={`mt-1 text-[10px] font-medium ${
+              className={`mt-1 text-[11px] font-medium ${
                 step.active ? "text-[#0F766E]" : step.reached ? "text-slate-600" : "text-slate-400"
               }`}
             >
@@ -288,7 +288,7 @@ export default function BAADetailsModal({
           <div className="space-y-6">
             {/* Status Timeline */}
             <section>
-              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                 Contract Status
               </h3>
               <StatusTimeline status={baa.status} />
@@ -296,7 +296,7 @@ export default function BAADetailsModal({
 
             {/* Contract Details */}
             <section>
-              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                 Contract Details
               </h3>
               <div className="grid grid-cols-2 gap-3">
@@ -316,7 +316,7 @@ export default function BAADetailsModal({
 
             {/* Vendor Info */}
             <section>
-              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                 Vendor Information
               </h3>
               <div className="grid grid-cols-2 gap-3">
@@ -337,7 +337,7 @@ export default function BAADetailsModal({
 
             {/* Audit Trail */}
             <section>
-              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                 Audit Trail
               </h3>
               {sortedLogs.length === 0 ? (
@@ -414,7 +414,7 @@ export default function BAADetailsModal({
 function DetailItem({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div>
-      <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{label}</dt>
+      <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</dt>
       <dd className={`mt-0.5 text-sm font-medium text-slate-900 ${mono ? "font-mono" : ""}`}>{value}</dd>
     </div>
   );
