@@ -120,7 +120,7 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
               key={f.key}
               type="button"
               onClick={() => setFilter(f.key)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+              className={`rounded-full px-4 py-2 text-xs font-medium transition-colors ${
                 filter === f.key
                   ? "bg-[#0F766E] text-white shadow-sm"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
