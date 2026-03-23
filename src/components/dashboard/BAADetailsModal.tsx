@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AuditLog, BAA, BAAStatus, Vendor } from "@/types";
 import { useToast } from "@/components/ui/Toast";
 
@@ -179,6 +179,9 @@ function AIChatPlaceholder() {
   );
 }
 
+// ─── Animation States ───────────────────────────────────────────────────────
+type AnimationPhase = "enter-start" | "enter-active" | "exit-active" | "exit-done";
+
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function BAADetailsModal({
@@ -188,26 +191,61 @@ export default function BAADetailsModal({
   onClose,
 }: BAADetailsModalProps) {
   const { addToast } = useToast();
-  const [isClosing, setIsClosing] = useState(false);
 
+  // Track whether the modal is visible (mounted in DOM) independently of the baa prop
+  const [visible, setVisible] = useState(false);
+  const [animationPhase, setAnimationPhase] = useState<AnimationPhase>("enter-start");
+
+  // Keep a ref to the latest baa/vendor so content remains while exit-animating
+  const baaRef = useRef<BAA | null>(baa);
+  const vendorRef = useRef<Vendor | null>(vendor);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  // When baa becomes non-null, mount and kick off enter animation
+  useEffect(() => {
+    if (baa && vendor) {
+      baaRef.current = baa;
+      vendorRef.current = vendor;
+      setVisible(true);
+      setAnimationPhase("enter-start");
+
+      // Trigger enter animation on next frame so the browser paints the initial state first
+      const rafId = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setAnimationPhase("enter-active");
+        });
+      });
+      return () => cancelAnimationFrame(rafId);
+    }
+  }, [baa, vendor]);
+
+  // Handle close: run exit animation, then unmount
   const handleClose = useCallback(() => {
-    setIsClosing(true);
+    setAnimationPhase("exit-active");
     setTimeout(() => {
-      setIsClosing(false);
-      onClose();
-    }, 300);
-  }, [onClose]);
+      setAnimationPhase("exit-done");
+      setVisible(false);
+      onCloseRef.current();
+    }, 250); // matches exit duration
+  }, []);
 
   // Close on Escape
   useEffect(() => {
+    if (!visible) return;
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") handleClose();
     }
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [handleClose]);
+  }, [visible, handleClose]);
 
-  if (!baa || !vendor) return null;
+  // Don't render anything if not visible
+  if (!visible) return null;
+
+  // Use refs so content stays stable during exit animation
+  const currentBaa = baaRef.current!;
+  const currentVendor = vendorRef.current!;
 
   const sortedLogs = [...auditLogs].sort(
     (a, b) => new Date(b.performedAt).getTime() - new Date(a.performedAt).getTime()
@@ -215,7 +253,7 @@ export default function BAADetailsModal({
 
   const handleSendReminder = () => {
     try {
-      addToast(`Reminder sent to ${vendor.contactEmail}`, "success");
+      addToast(`Reminder sent to ${currentVendor.contactEmail}`, "success");
     } catch {
       addToast("Failed to send reminder", "error");
     }
@@ -224,7 +262,7 @@ export default function BAADetailsModal({
   const handleDownloadPDF = async () => {
     try {
       addToast("Generating PDF...", "info");
-      const response = await fetch(`/api/pdf/${baa.id}`);
+      const response = await fetch(`/api/pdf/${currentBaa.id}`);
       if (!response.ok) {
         throw new Error(`Server responded with ${response.status}`);
       }
@@ -232,7 +270,7 @@ export default function BAADetailsModal({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `BAA-${baa.id}.pdf`;
+      a.download = `BAA-${currentBaa.id}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -245,7 +283,7 @@ export default function BAADetailsModal({
 
   const handleMarkForRenewal = () => {
     try {
-      addToast(`${vendor.name} marked for renewal`, "success");
+      addToast(`${currentVendor.name} marked for renewal`, "success");
     } catch {
       addToast("Failed to mark for renewal", "error");
     }
@@ -253,7 +291,7 @@ export default function BAADetailsModal({
 
   const handleCopySigningLink = () => {
     try {
-      const link = `${window.location.origin}/sign/${baa.id}`;
+      const link = `${window.location.origin}/sign/${currentBaa.id}`;
       navigator.clipboard.writeText(link).then(
         () => addToast("Signing link copied to clipboard", "success"),
         () => addToast("Failed to copy link", "error")
@@ -263,13 +301,18 @@ export default function BAADetailsModal({
     }
   };
 
+  // Determine classes based on animation phase
+  const isOpen = animationPhase === "enter-active";
+  const backdropOpacity = isOpen ? "opacity-50" : "opacity-0";
+  const panelTranslate = isOpen ? "translate-x-0" : "translate-x-full";
+
   return (
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-40 bg-foreground/60 backdrop-blur-sm transition-opacity duration-300 ${
-          isClosing ? "opacity-0" : "opacity-100"
-        }`}
+        className={`fixed inset-0 z-40 bg-foreground backdrop-blur-sm transition-opacity duration-200 ${
+          isOpen ? "ease-out" : "ease-in"
+        } ${backdropOpacity}`}
         onClick={handleClose}
         aria-hidden="true"
       />
@@ -278,24 +321,26 @@ export default function BAADetailsModal({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={`BAA details for ${vendor.name}`}
-        className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col bg-card shadow-2xl transition-transform duration-300 ${
-          isClosing ? "translate-x-full" : "translate-x-0"
+        aria-label={`BAA details for ${currentVendor.name}`}
+        className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col bg-card shadow-[-8px_0_24px_rgba(0,0,0,0.12)] ${
+          isOpen
+            ? "translate-x-0 transition-transform duration-300 ease-out"
+            : "translate-x-full transition-transform duration-[250ms] ease-in"
         }`}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-3">
             <div>
-              <h2 className="text-lg font-bold text-foreground">{vendor.name}</h2>
-              <p className="text-sm text-muted-foreground">{formatVendorType(vendor.type)}</p>
+              <h2 className="text-lg font-bold text-foreground">{currentVendor.name}</h2>
+              <p className="text-sm text-muted-foreground">{formatVendorType(currentVendor.type)}</p>
             </div>
             <span
               className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
-              style={{ backgroundColor: STATUS_CONFIG[baa.status].bg, color: STATUS_CONFIG[baa.status].text }}
+              style={{ backgroundColor: STATUS_CONFIG[currentBaa.status].bg, color: STATUS_CONFIG[currentBaa.status].text }}
             >
-              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: STATUS_CONFIG[baa.status].dot }} />
-              {STATUS_CONFIG[baa.status].label}
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: STATUS_CONFIG[currentBaa.status].dot }} />
+              {STATUS_CONFIG[currentBaa.status].label}
             </span>
           </div>
           <button
@@ -318,7 +363,7 @@ export default function BAADetailsModal({
               <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Contract Status
               </h3>
-              <StatusTimeline status={baa.status} />
+              <StatusTimeline status={currentBaa.status} />
             </section>
 
             <Separator />
@@ -329,14 +374,14 @@ export default function BAADetailsModal({
                 Contract Details
               </h3>
               <div className="grid grid-cols-2 gap-3">
-                <DetailItem label="Effective Date" value={formatDate(baa.effectiveDate)} />
-                <DetailItem label="Expiration Date" value={formatDate(baa.expirationDate)} />
-                <DetailItem label="Signed Date" value={formatDate(baa.signedDate)} />
-                <DetailItem label="Signed By" value={baa.signedBy ?? "--"} />
-                <DetailItem label="Template Version" value={baa.templateVersion} mono />
-                <DetailItem label="Term" value={`${baa.termYears} year${baa.termYears > 1 ? "s" : ""}`} />
+                <DetailItem label="Effective Date" value={formatDate(currentBaa.effectiveDate)} />
+                <DetailItem label="Expiration Date" value={formatDate(currentBaa.expirationDate)} />
+                <DetailItem label="Signed Date" value={formatDate(currentBaa.signedDate)} />
+                <DetailItem label="Signed By" value={currentBaa.signedBy ?? "--"} />
+                <DetailItem label="Template Version" value={currentBaa.templateVersion} mono />
+                <DetailItem label="Term" value={`${currentBaa.termYears} year${currentBaa.termYears > 1 ? "s" : ""}`} />
               </div>
-              {baa.requiresStateLawRetentionNotice && (
+              {currentBaa.requiresStateLawRetentionNotice && (
                 <div className="mt-3 rounded-lg border border-[#B45309]/20 bg-[#FEF3C7] px-3 py-2 text-xs text-[#B45309]">
                   <strong>MS State Law:</strong> This vendor requires 10-year medical records retention notice per Mississippi state law.
                 </div>
@@ -351,17 +396,17 @@ export default function BAADetailsModal({
                 Vendor Information
               </h3>
               <div className="grid grid-cols-2 gap-3">
-                <DetailItem label="Contact" value={vendor.contactName} />
-                <DetailItem label="Email" value={vendor.contactEmail} />
-                <DetailItem label="Phone" value={vendor.contactPhone} />
-                <DetailItem label="Address" value={vendor.address} />
+                <DetailItem label="Contact" value={currentVendor.contactName} />
+                <DetailItem label="Email" value={currentVendor.contactEmail} />
+                <DetailItem label="Phone" value={currentVendor.contactPhone} />
+                <DetailItem label="Address" value={currentVendor.address} />
                 <DetailItem
                   label="Breach SLA"
-                  value={`${vendor.breachNotificationSLADays} days`}
+                  value={`${currentVendor.breachNotificationSLADays} days`}
                 />
                 <DetailItem
                   label="SOC 2 Required"
-                  value={vendor.requiresSoc2Report ? "Yes" : "No"}
+                  value={currentVendor.requiresSoc2Report ? "Yes" : "No"}
                 />
               </div>
             </section>
@@ -414,7 +459,7 @@ export default function BAADetailsModal({
             <Button variant="outline" onClick={handleMarkForRenewal}>
               Mark for Renewal
             </Button>
-            {baa.status === "pending_signature" && (
+            {currentBaa.status === "pending_signature" && (
               <Button
                 variant="outline"
                 onClick={handleCopySigningLink}
