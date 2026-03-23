@@ -40,13 +40,13 @@ export function useToast(): ToastContextValue {
 
 const VARIANT_CLASSES: Record<ToastVariant, string> = {
   success:
-    "bg-emerald-50 border-emerald-400 text-emerald-800",
+    "bg-[#DCFCE7] border-[#15803D]/30 text-[#15803D]",
   error:
-    "bg-red-50 border-red-400 text-red-800",
+    "bg-[#FEE2E2] border-[#B91C1C]/30 text-[#B91C1C]",
   warning:
-    "bg-amber-50 border-amber-400 text-amber-800",
+    "bg-[#FEF3C7] border-[#B45309]/30 text-[#B45309]",
   info:
-    "bg-blue-50 border-blue-400 text-blue-800",
+    "bg-[#DBEAFE] border-[#1D4ED8]/30 text-[#1D4ED8]",
 };
 
 const VARIANT_ICONS: Record<ToastVariant, string> = {

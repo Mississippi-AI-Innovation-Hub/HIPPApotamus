@@ -49,13 +49,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-50">
-      <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-xl">
+    <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
+      <div className="w-full max-w-[420px] rounded-lg bg-white p-8 shadow-sm border border-[#E2E8F0]">
         {/* Logo / Branding */}
         <div className="text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-teal-600">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-md bg-[#0F766E]">
             <svg
-              className="h-9 w-9 text-white"
+              className="h-8 w-8 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -69,27 +69,31 @@ export default function LoginPage() {
               />
             </svg>
           </div>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-teal-800">
+          <h1
+            className="mt-4 text-3xl tracking-tight text-[#0F172A]"
+            style={{ fontFamily: "'Instrument Serif', serif" }}
+          >
             HIPAApotamus
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-[#94A3B8]">
             HIPAA BAA Management System
           </p>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-center text-sm text-red-700">
+          <div className="mt-6 rounded border border-red-200 bg-red-50 px-3 py-2.5 text-center text-sm text-red-700">
             {error}
           </div>
         )}
 
         {/* Login Form */}
-        <form className="space-y-5" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-slate-700"
+              className="block text-sm font-medium text-[#475569]"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               Email address
             </label>
@@ -102,7 +106,8 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-1.5 block w-full rounded border border-[#E2E8F0] px-3 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F766E] focus:outline-none focus:ring-2 focus:ring-teal-100 disabled:cursor-not-allowed disabled:opacity-60"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
               placeholder="you@example.com"
             />
           </div>
@@ -110,7 +115,8 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-slate-700"
+              className="block text-sm font-medium text-[#475569]"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
               Password
             </label>
@@ -123,7 +129,8 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
-              className="mt-1 block w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-900 placeholder-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-1.5 block w-full rounded border border-[#E2E8F0] px-3 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F766E] focus:outline-none focus:ring-2 focus:ring-teal-100 disabled:cursor-not-allowed disabled:opacity-60"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
               placeholder="Enter your password"
             />
           </div>
@@ -131,7 +138,8 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="flex w-full items-center justify-center rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center rounded bg-[#0F766E] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0D6560] focus:outline-none focus:ring-2 focus:ring-teal-100 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            style={{ fontFamily: "'DM Sans', sans-serif" }}
           >
             {isLoading ? (
               <>
@@ -158,13 +166,13 @@ export default function LoginPage() {
                 Signing in...
               </>
             ) : (
-              "Sign in"
+              "Sign In"
             )}
           </button>
         </form>
 
-        <p className="text-center text-xs text-slate-400">
-          Mississippi Department of Health &mdash; Secure Access
+        <p className="mt-8 text-center text-[#94A3B8]" style={{ fontSize: "11px", fontFamily: "'DM Sans', sans-serif" }}>
+          Mississippi Department of Health &middot; Secure Access
         </p>
       </div>
     </div>

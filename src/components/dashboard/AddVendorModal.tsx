@@ -171,7 +171,7 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-40 bg-slate-900/50 transition-opacity duration-200 ${
+        className={`fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-200 ${
           isClosing ? "opacity-0" : "opacity-100"
         }`}
         onClick={handleClose}
@@ -184,15 +184,15 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
           role="dialog"
           aria-modal="true"
           aria-label="Add new vendor"
-          className={`w-full max-w-lg rounded-2xl bg-white shadow-2xl transition-all duration-200 ${
+          className={`w-full max-w-lg rounded-xl bg-white shadow-2xl transition-all duration-200 ${
             isClosing ? "scale-95 opacity-0" : "scale-100 opacity-100"
           }`}
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
             <div>
-              <h2 className="text-lg font-bold text-slate-800">Add New Vendor</h2>
-              <p className="text-sm text-slate-500">
+              <h2 className="text-lg font-bold text-slate-900">Add New Vendor</h2>
+              <p className="text-sm text-slate-600">
                 Step {step} of 2 &mdash;{" "}
                 {step === 1 ? "Vendor Information" : "Contract Setup"}
               </p>
@@ -211,8 +211,8 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
 
           {/* Step indicator */}
           <div className="flex gap-2 px-6 pt-4">
-            <div className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-teal-500" : "bg-slate-200"}`} />
-            <div className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-teal-500" : "bg-slate-200"}`} />
+            <div className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-[#0F766E]" : "bg-slate-200"}`} />
+            <div className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-[#0F766E]" : "bg-slate-200"}`} />
           </div>
 
           {/* Body */}
@@ -228,7 +228,7 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
                     value={vendor.name}
                     onChange={(e) => setVendor({ ...vendor, name: e.target.value })}
                     placeholder="e.g. CernerHealth Systems"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition-colors focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none transition-colors focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/10"
                   />
                 </FormField>
 
@@ -236,7 +236,7 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
                   <select
                     value={vendor.type}
                     onChange={(e) => setVendor({ ...vendor, type: e.target.value as VendorType })}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none transition-colors focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/10"
                   >
                     {VENDOR_TYPE_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -253,7 +253,7 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
                       value={vendor.contactName}
                       onChange={(e) => setVendor({ ...vendor, contactName: e.target.value })}
                       placeholder="Jane Smith"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition-colors focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none transition-colors focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/10"
                     />
                   </FormField>
 
@@ -263,7 +263,7 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
                       value={vendor.contactEmail}
                       onChange={(e) => setVendor({ ...vendor, contactEmail: e.target.value })}
                       placeholder="jane@vendor.com"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition-colors focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none transition-colors focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/10"
                     />
                   </FormField>
                 </div>
@@ -275,7 +275,7 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
                       value={vendor.contactPhone}
                       onChange={(e) => setVendor({ ...vendor, contactPhone: e.target.value })}
                       placeholder="(601) 555-0123"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition-colors focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none transition-colors focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/10"
                     />
                   </FormField>
 
@@ -285,7 +285,7 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
                       value={vendor.address}
                       onChange={(e) => setVendor({ ...vendor, address: e.target.value })}
                       placeholder="123 Health St, Jackson MS"
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition-colors focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none transition-colors focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/10"
                     />
                   </FormField>
                 </div>
@@ -298,7 +298,7 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
                     onChange={(e) =>
                       setContract({ ...contract, contractType: e.target.value as ContractType })
                     }
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none transition-colors focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/10"
                   >
                     {CONTRACT_TYPE_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -316,7 +316,7 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
                       setContract({ ...contract, templateVersion: e.target.value })
                     }
                     placeholder="v2.1.0"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 outline-none transition-colors focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none transition-colors focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/10"
                   />
                 </FormField>
 
@@ -328,7 +328,7 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
                       onChange={(e) =>
                         setContract({ ...contract, effectiveDate: e.target.value })
                       }
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none transition-colors focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/10"
                     />
                   </FormField>
 
@@ -339,12 +339,12 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
                       onChange={(e) =>
                         setContract({ ...contract, expirationDate: e.target.value })
                       }
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none transition-colors focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/10"
                     />
                   </FormField>
                 </div>
 
-                <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-blue-700">
+                <div className="rounded-lg border border-[#1D4ED8]/20 bg-[#DBEAFE] px-4 py-3 text-xs text-[#1D4ED8]">
                   <strong>Note:</strong> Once submitted, the vendor will receive an
                   email invitation to create their account and complete the BAA
                   signing process.
@@ -378,7 +378,7 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
               <button
                 type="button"
                 onClick={handleStep1Next}
-                className="rounded-lg bg-teal-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
+                className="rounded-lg bg-[#0F766E] px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0D6560]"
               >
                 Next
               </button>
@@ -387,7 +387,7 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
                 type="button"
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="flex items-center gap-2 rounded-lg bg-teal-600 px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex items-center gap-2 rounded-lg bg-[#0F766E] px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0D6560] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting && (
                   <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -429,9 +429,9 @@ function FormField({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-slate-600">
+      <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-slate-400">
         {label}
-        {required && <span className="ml-0.5 text-red-400">*</span>}
+        {required && <span className="ml-0.5 text-[#B91C1C]">*</span>}
       </span>
       {children}
     </label>

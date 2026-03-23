@@ -81,9 +81,9 @@ function StatusTimeline({ status }: { status: BAAStatus }) {
             <div
               className={`flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-bold transition-colors ${
                 step.active
-                  ? "border-teal-500 bg-teal-500 text-white"
+                  ? "border-[#0F766E] bg-[#0F766E] text-white"
                   : step.reached
-                    ? "border-teal-300 bg-teal-50 text-teal-600"
+                    ? "border-[#0F766E]/40 bg-[#0F766E]/10 text-[#0F766E]"
                     : "border-slate-200 bg-slate-50 text-slate-400"
               }`}
             >
@@ -97,7 +97,7 @@ function StatusTimeline({ status }: { status: BAAStatus }) {
             </div>
             <span
               className={`mt-1 text-[10px] font-medium ${
-                step.active ? "text-teal-600" : step.reached ? "text-slate-500" : "text-slate-300"
+                step.active ? "text-[#0F766E]" : step.reached ? "text-slate-600" : "text-slate-400"
               }`}
             >
               {step.label}
@@ -106,7 +106,7 @@ function StatusTimeline({ status }: { status: BAAStatus }) {
           {i < steps.length - 1 && (
             <div
               className={`mb-4 h-0.5 w-6 sm:w-8 ${
-                steps[i + 1].reached ? "bg-teal-300" : "bg-slate-200"
+                steps[i + 1].reached ? "bg-[#0F766E]/40" : "bg-slate-200"
               }`}
             />
           )}
@@ -129,7 +129,7 @@ function AIChatPlaceholder() {
         className="flex w-full items-center justify-between px-4 py-3 text-left"
       >
         <div className="flex items-center gap-2">
-          <svg className="h-5 w-5 text-teal-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <svg className="h-5 w-5 text-[#0F766E]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
           </svg>
           <span className="text-sm font-medium text-slate-700">AI Contract Assistant</span>
@@ -152,7 +152,7 @@ function AIChatPlaceholder() {
           <p className="text-sm text-slate-400">
             AI-powered contract analysis coming in a future release.
           </p>
-          <p className="mt-1 text-xs text-slate-300">
+          <p className="mt-1 text-xs text-slate-400">
             Ask questions about terms, compliance requirements, and renewal history.
           </p>
         </div>
@@ -249,7 +249,7 @@ export default function BAADetailsModal({
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-40 bg-slate-900/50 transition-opacity duration-300 ${
+        className={`fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300 ${
           isClosing ? "opacity-0" : "opacity-100"
         }`}
         onClick={handleClose}
@@ -268,8 +268,8 @@ export default function BAADetailsModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">{vendor.name}</h2>
-            <p className="text-sm text-slate-500">{formatVendorType(vendor.type)}</p>
+            <h2 className="text-lg font-bold text-slate-900">{vendor.name}</h2>
+            <p className="text-sm text-slate-600">{formatVendorType(vendor.type)}</p>
           </div>
           <button
             type="button"
@@ -288,7 +288,7 @@ export default function BAADetailsModal({
           <div className="space-y-6">
             {/* Status Timeline */}
             <section>
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                 Contract Status
               </h3>
               <StatusTimeline status={baa.status} />
@@ -296,7 +296,7 @@ export default function BAADetailsModal({
 
             {/* Contract Details */}
             <section>
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                 Contract Details
               </h3>
               <div className="grid grid-cols-2 gap-3">
@@ -304,11 +304,11 @@ export default function BAADetailsModal({
                 <DetailItem label="Expiration Date" value={formatDate(baa.expirationDate)} />
                 <DetailItem label="Signed Date" value={formatDate(baa.signedDate)} />
                 <DetailItem label="Signed By" value={baa.signedBy ?? "--"} />
-                <DetailItem label="Template Version" value={baa.templateVersion} />
+                <DetailItem label="Template Version" value={baa.templateVersion} mono />
                 <DetailItem label="Term" value={`${baa.termYears} year${baa.termYears > 1 ? "s" : ""}`} />
               </div>
               {baa.requiresStateLawRetentionNotice && (
-                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                <div className="mt-3 rounded-lg border border-[#B45309]/20 bg-[#FEF3C7] px-3 py-2 text-xs text-[#B45309]">
                   <strong>MS State Law:</strong> This vendor requires 10-year medical records retention notice per Mississippi state law.
                 </div>
               )}
@@ -316,7 +316,7 @@ export default function BAADetailsModal({
 
             {/* Vendor Info */}
             <section>
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                 Vendor Information
               </h3>
               <div className="grid grid-cols-2 gap-3">
@@ -337,7 +337,7 @@ export default function BAADetailsModal({
 
             {/* Audit Trail */}
             <section>
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <h3 className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                 Audit Trail
               </h3>
               {sortedLogs.length === 0 ? (
@@ -347,12 +347,12 @@ export default function BAADetailsModal({
                   {sortedLogs.map((log) => (
                     <div
                       key={log.id}
-                      className="flex items-start gap-3 rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2"
+                      className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5"
                     >
-                      <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-teal-400" />
+                      <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-[#0F766E]" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-slate-700">{log.action}</p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-sm font-medium text-slate-900">{log.action}</p>
+                        <p className="font-mono text-[11px] text-slate-400">
                           {formatTimestamp(log.performedAt)} &middot; {log.performedBy}
                         </p>
                       </div>
@@ -375,7 +375,7 @@ export default function BAADetailsModal({
             <button
               type="button"
               onClick={handleSendReminder}
-              className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
+              className="rounded-lg bg-[#0F766E] px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0D6560]"
             >
               Send Reminder
             </button>
@@ -397,7 +397,7 @@ export default function BAADetailsModal({
               <button
                 type="button"
                 onClick={handleCopySigningLink}
-                className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-medium text-teal-700 shadow-sm transition-colors hover:bg-teal-100"
+                className="rounded-lg border border-[#0F766E]/20 bg-[#0F766E]/10 px-4 py-2 text-sm font-medium text-[#0F766E] shadow-sm transition-colors hover:bg-[#0F766E]/20"
               >
                 Copy Signing Link
               </button>
@@ -411,11 +411,11 @@ export default function BAADetailsModal({
 
 // ─── Detail Item ────────────────────────────────────────────────────────────
 
-function DetailItem({ label, value }: { label: string; value: string }) {
+function DetailItem({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div>
-      <dt className="text-xs text-slate-400">{label}</dt>
-      <dd className="mt-0.5 text-sm font-medium text-slate-700">{value}</dd>
+      <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{label}</dt>
+      <dd className={`mt-0.5 text-sm font-medium text-slate-900 ${mono ? "font-mono" : ""}`}>{value}</dd>
     </div>
   );
 }

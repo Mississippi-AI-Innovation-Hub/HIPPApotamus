@@ -113,10 +113,13 @@ export default function DashboardShell({
       {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-800">
+          <h1
+            className="text-3xl font-bold tracking-tight text-slate-900"
+            style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
+          >
             BAA Management Dashboard
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Mississippi Department of Health &mdash; HIPAA Compliance
           </p>
         </div>
@@ -134,7 +137,7 @@ export default function DashboardShell({
           <button
             type="button"
             onClick={() => setAddVendorOpen(true)}
-            className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
+            className="flex items-center gap-2 rounded-lg bg-[#0F766E] px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0D6560]"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -162,7 +165,7 @@ export default function DashboardShell({
               onClick={() => setActiveTab(tab.key)}
               className={`flex items-center gap-2 border-b-2 pb-3 pt-1 text-sm font-medium transition-colors ${
                 activeTab === tab.key
-                  ? "border-teal-500 text-teal-600"
+                  ? "border-[#0F766E] text-[#0F766E]"
                   : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
               }`}
             >

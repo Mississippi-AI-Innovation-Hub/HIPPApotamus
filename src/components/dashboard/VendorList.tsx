@@ -26,18 +26,18 @@ function formatVendorType(type: VendorType): string {
 }
 
 const TYPE_COLORS: Record<VendorType, string> = {
-  ehr_platform: "bg-blue-100 text-blue-700",
-  reference_laboratory: "bg-violet-100 text-violet-700",
-  telehealth_platform: "bg-cyan-100 text-cyan-700",
-  eprescribing_pmp: "bg-pink-100 text-pink-700",
-  medical_records_storage: "bg-orange-100 text-orange-700",
+  ehr_platform: "bg-slate-100 text-slate-600",
+  reference_laboratory: "bg-slate-100 text-slate-600",
+  telehealth_platform: "bg-slate-100 text-slate-600",
+  eprescribing_pmp: "bg-slate-100 text-slate-600",
+  medical_records_storage: "bg-slate-100 text-slate-600",
   other: "bg-slate-100 text-slate-600",
 };
 
 const STATUS_DOT: Record<BAAStatus, string> = {
-  active: "bg-emerald-500",
-  expiring_soon: "bg-amber-500",
-  expired: "bg-red-500",
+  active: "bg-[#15803D]",
+  expiring_soon: "bg-[#B45309]",
+  expired: "bg-[#B91C1C]",
   pending_signature: "bg-slate-400",
 };
 
@@ -119,14 +119,14 @@ export default function VendorList({ vendors, baas, onSelectVendor }: VendorList
             placeholder="Search vendors by name, contact, or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-800 placeholder-slate-400 outline-none transition-colors focus:border-teal-400 focus:bg-white focus:ring-2 focus:ring-teal-100"
+            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition-colors focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/10"
           />
         </div>
       </div>
 
       {/* Grid */}
       {filteredVendors.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white px-6 py-12 text-center">
+        <div className="rounded-lg border border-slate-200 bg-white px-6 py-12 text-center shadow-sm">
           <svg className="mx-auto mb-3 h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
           </svg>
@@ -141,11 +141,11 @@ export default function VendorList({ vendors, baas, onSelectVendor }: VendorList
                 key={vendor.id}
                 type="button"
                 onClick={() => onSelectVendor(vendor)}
-                className="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:border-teal-200 hover:shadow-md"
+                className="group flex flex-col rounded-lg border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:border-[#0F766E]/30 hover:shadow-md"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between">
-                  <h3 className="text-sm font-bold text-slate-800 group-hover:text-teal-700">
+                  <h3 className="text-sm font-bold text-slate-900 group-hover:text-[#0F766E]">
                     {vendor.name}
                   </h3>
                   <span
@@ -157,13 +157,13 @@ export default function VendorList({ vendors, baas, onSelectVendor }: VendorList
 
                 {/* Contact */}
                 <div className="mt-3 space-y-1">
-                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <div className="flex items-center gap-2 text-xs text-slate-600">
                     <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                     </svg>
                     <span className="truncate">{vendor.contactName}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <div className="flex items-center gap-2 text-xs text-slate-600">
                     <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
                     </svg>
@@ -172,18 +172,18 @@ export default function VendorList({ vendors, baas, onSelectVendor }: VendorList
                 </div>
 
                 {/* Footer — BAA status + activity */}
-                <div className="mt-auto flex items-center justify-between pt-4">
+                <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4 mt-4">
                   {baa ? (
                     <div className="flex items-center gap-1.5">
                       <span className={`h-2 w-2 rounded-full ${STATUS_DOT[baa.status]}`} />
-                      <span className="text-xs font-medium text-slate-500">
+                      <span className="text-xs font-medium text-slate-600">
                         {STATUS_TEXT[baa.status]}
                       </span>
                     </div>
                   ) : (
-                    <span className="text-xs text-slate-300">No BAA</span>
+                    <span className="text-xs text-slate-400">No BAA</span>
                   )}
-                  <span className="text-[10px] text-slate-300">
+                  <span className="text-[10px] text-slate-400">
                     {formatRelativeTime(vendor.updatedAt)}
                   </span>
                 </div>
