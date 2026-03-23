@@ -138,22 +138,18 @@ export default function Sidebar({
           {!collapsed && (
             <div className="min-w-0">
               <h1
-                className="truncate text-sm font-bold"
+                className="truncate text-lg font-bold"
                 style={{
-                  fontFamily: "'Instrument Serif', Georgia, serif",
+                  fontFamily: "'Satoshi', sans-serif",
                   color: "#F8FAFC",
-                  fontSize: "20px",
-                  letterSpacing: "0.01em",
                 }}
               >
                 HIPAApotamus
               </h1>
               <p
-                className="truncate font-medium uppercase tracking-wider"
+                className="truncate text-[11px] font-medium uppercase tracking-wider"
                 style={{
-                  fontSize: "11px",
-                  color: "rgba(148,163,184,0.8)",
-                  letterSpacing: "0.08em",
+                  color: "rgba(148,163,184,0.6)",
                 }}
               >
                 BAA Management
@@ -224,7 +220,7 @@ export default function Sidebar({
                 <button
                   type="button"
                   onClick={() => handleNavClick(item)}
-                  className={`group relative flex w-full items-center gap-3 py-2.5 text-[13px] font-medium transition-colors ${
+                  className={`group relative flex w-full items-center gap-3 py-2.5 text-sm font-medium transition-colors ${
                     collapsed ? "justify-center rounded px-2" : "rounded px-3"
                   }`}
                   style={{

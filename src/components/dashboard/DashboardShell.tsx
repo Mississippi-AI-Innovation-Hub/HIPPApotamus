@@ -103,6 +103,7 @@ export default function DashboardShell({
 
   return (
     <div className="flex h-screen bg-background">
+      {/* Left: Sidebar */}
       <Sidebar
         userName={userName}
         userRole={userRole}
@@ -110,8 +111,10 @@ export default function DashboardShell({
         onNavigate={(tab) => setActiveTab(tab as Tab)}
         activeTab={activeTab}
       />
+
+      {/* Center: Main content */}
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[1400px] space-y-8 px-8 py-8">
+        <div className="space-y-8 px-8 py-8">
           {/* Page header */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -211,6 +214,86 @@ export default function DashboardShell({
           <DevTools />
         </div>
       </main>
+
+      {/* Right: AI Chat Panel */}
+      <aside className="hidden w-[340px] shrink-0 flex-col border-l border-border bg-card xl:flex">
+        {/* Chat header */}
+        <div className="flex items-center gap-3 border-b border-border px-5 py-4">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+            <svg className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+            </svg>
+          </div>
+          <div>
+            <h3
+              className="text-sm font-semibold text-foreground"
+              style={{ fontFamily: "'Satoshi', sans-serif" }}
+            >
+              AI Assistant
+            </h3>
+            <p className="text-xs text-muted-foreground">Ask anything about your BAAs</p>
+          </div>
+        </div>
+
+        {/* Chat messages area */}
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-4">
+            {/* Welcome message */}
+            <div className="rounded-lg bg-muted/50 p-3">
+              <p className="text-sm text-muted-foreground">
+                Hi! I&apos;m your HIPAA compliance assistant. I can help you with:
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <span className="h-1 w-1 rounded-full bg-primary" />
+                  Review contract status
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1 w-1 rounded-full bg-primary" />
+                  Add or manage vendors
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1 w-1 rounded-full bg-primary" />
+                  Generate audit reports
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1 w-1 rounded-full bg-primary" />
+                  Explain HIPAA requirements
+                </li>
+              </ul>
+            </div>
+
+            {/* Quick action chips */}
+            <div className="flex flex-wrap gap-1.5">
+              <button className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+                Summarize expiring contracts
+              </button>
+              <button className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+                What needs attention?
+              </button>
+              <button className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+                Recent activity
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Chat input */}
+        <div className="border-t border-border p-4">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Ask about your BAAs..."
+              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
+            />
+            <button className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }
