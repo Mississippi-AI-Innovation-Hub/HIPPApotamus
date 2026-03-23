@@ -216,19 +216,40 @@ export default function DashboardShell({
         </div>
       </main>
 
-      {/* Floating toggle button — visible when panel is closed */}
-      {!copilotOpen && (
+      {/* Copilot edge tab — a vertical pill docked to the right edge */}
+      <div
+        className={`fixed right-0 top-1/2 z-40 -translate-y-1/2 transition-all duration-300 ${
+          copilotOpen ? "pointer-events-none opacity-0 translate-x-4" : "opacity-100 translate-x-0"
+        }`}
+      >
         <button
           onClick={() => setCopilotOpen(true)}
-          className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95"
-          style={{ background: "linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)" }}
+          className="group flex flex-col items-center gap-2 rounded-l-2xl border border-r-0 border-border bg-card px-2 py-5 shadow-premium transition-all duration-200 hover:px-3 hover:shadow-premium-hover"
           title="Open HIPAA Copilot"
         >
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z" />
-          </svg>
+          {/* Sparkle icon */}
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110"
+            style={{ background: "linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)" }}
+          >
+            <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+            </svg>
+          </div>
+          {/* Vertical text */}
+          <span
+            className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground transition-colors group-hover:text-[#0F766E]"
+            style={{ writingMode: "vertical-lr" }}
+          >
+            AI Copilot
+          </span>
+          {/* Pulsing dot */}
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+          </span>
         </button>
-      )}
+      </div>
 
       {/* Right: AI Compliance Agent Panel — collapsible */}
       <aside
