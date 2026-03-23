@@ -106,7 +106,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
-              className="mt-1.5 block w-full rounded border border-[#E2E8F0] px-3 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F766E] focus:outline-none focus:ring-2 focus:ring-teal-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-1.5 block w-full rounded border border-[#E2E8F0] px-3 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F766E] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/10 disabled:cursor-not-allowed disabled:opacity-60"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
               placeholder="you@example.com"
             />
@@ -129,7 +129,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
-              className="mt-1.5 block w-full rounded border border-[#E2E8F0] px-3 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F766E] focus:outline-none focus:ring-2 focus:ring-teal-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-1.5 block w-full rounded border border-[#E2E8F0] px-3 py-2.5 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F766E] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/10 disabled:cursor-not-allowed disabled:opacity-60"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
               placeholder="Enter your password"
             />
@@ -138,7 +138,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="flex w-full items-center justify-center rounded bg-[#0F766E] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0D6560] focus:outline-none focus:ring-2 focus:ring-teal-100 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center rounded bg-[#0F766E] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0D6560] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/10 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             style={{ fontFamily: "'DM Sans', sans-serif" }}
           >
             {isLoading ? (

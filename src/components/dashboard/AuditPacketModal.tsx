@@ -328,7 +328,7 @@ export default function AuditPacketModal({
               {/* Complete */}
               {status === "complete" && (
                 <section>
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4 text-center">
+                  <div className="rounded-lg border border-[#15803D]/20 bg-[#DCFCE7] px-4 py-4 text-center">
                     <svg className="mx-auto mb-2 h-8 w-8 text-[#15803D]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                     </svg>

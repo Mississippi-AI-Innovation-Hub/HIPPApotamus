@@ -113,21 +113,18 @@ export default function DashboardShell({
       {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1
-            className="text-3xl font-bold tracking-tight text-slate-900"
-            style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
-          >
+          <h1 className="text-xl font-semibold text-slate-900">
             BAA Management Dashboard
           </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Mississippi Department of Health &mdash; HIPAA Compliance
+          <p className="mt-0.5 text-xs text-slate-400">
+            HIPAA Compliance Overview
           </p>
         </div>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setAuditPacketOpen(true)}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+            className="flex items-center gap-2 rounded border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
@@ -137,7 +134,7 @@ export default function DashboardShell({
           <button
             type="button"
             onClick={() => setAddVendorOpen(true)}
-            className="flex items-center gap-2 rounded-lg bg-[#0F766E] px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0D6560]"
+            className="flex items-center gap-2 rounded bg-[#0F766E] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0D6560]"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -163,7 +160,7 @@ export default function DashboardShell({
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 border-b-2 pb-3 pt-1 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 border-b-2 pb-3 pt-2 text-sm font-medium transition-colors ${
                 activeTab === tab.key
                   ? "border-[#0F766E] text-[#0F766E]"
                   : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"

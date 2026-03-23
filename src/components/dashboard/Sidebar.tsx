@@ -347,7 +347,7 @@ export default function Sidebar({
         <button
           type="button"
           onClick={handleSignOut}
-          className={`mt-1 flex w-full items-center gap-3 rounded py-2 text-[13px] font-medium transition-colors ${
+          className={`mt-1 flex w-full items-center gap-3 rounded py-2.5 text-[13px] font-medium transition-colors ${
             collapsed ? "justify-center px-2" : "px-3"
           }`}
           style={{
