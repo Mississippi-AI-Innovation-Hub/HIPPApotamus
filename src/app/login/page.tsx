@@ -3,6 +3,10 @@
 import { useState, type FormEvent } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -49,13 +53,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
-      <div className="w-full max-w-md rounded-lg bg-white p-10 shadow-md border border-[#E2E8F0]">
+    <div className="flex min-h-screen items-center justify-center bg-muted/40">
+      <Card className="w-full max-w-md shadow-lg p-10 gap-0">
         {/* Logo / Branding */}
-        <div className="text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-lg bg-[#0F766E]">
+        <CardHeader className="flex flex-col items-center gap-0 px-0 pb-0">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary">
             <svg
-              className="h-9 w-9 text-white"
+              className="h-9 w-9 text-primary-foreground"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -70,111 +74,113 @@ export default function LoginPage() {
             </svg>
           </div>
           <h1
-            className="mt-5 text-4xl tracking-tight text-[#0F172A]"
-            style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
+            className="mt-5 text-[40px] font-bold tracking-tight text-foreground"
+            style={{ fontFamily: "'Satoshi', sans-serif" }}
           >
             HIPAApotamus
           </h1>
-          <p className="mt-1.5 text-base text-[#94A3B8]">
+          <p className="mt-1.5 text-base text-muted-foreground">
             HIPAA BAA Management System
           </p>
-        </div>
+        </CardHeader>
 
         {/* Error Message */}
         {error && (
-          <div className="mt-6 rounded border border-red-200 bg-red-50 px-3 py-2.5 text-center text-sm text-red-700">
+          <div className="mt-6 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-center text-sm text-destructive">
             {error}
           </div>
         )}
 
         {/* Login Form */}
-        <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-[#475569]"
-              
-            >
-              Email address
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+        <CardContent className="px-0 pt-0 pb-0">
+          <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-[14px] font-medium text-muted-foreground"
+              >
+                Email address
+              </label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+                className="mt-1.5 h-11 text-[15px] px-3"
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-[14px] font-medium text-muted-foreground"
+              >
+                Password
+              </label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                className="mt-1.5 h-11 text-[15px] px-3"
+                placeholder="Enter your password"
+              />
+            </div>
+
+            <Button
+              type="submit"
               disabled={isLoading}
-              className="mt-1.5 block w-full rounded border border-[#E2E8F0] px-3 py-3 text-base text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F766E] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/10 disabled:cursor-not-allowed disabled:opacity-60"
-              
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-[#475569]"
-              
+              size="lg"
+              className="w-full h-11 text-[16px] font-semibold"
             >
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-              className="mt-1.5 block w-full rounded border border-[#E2E8F0] px-3 py-3 text-base text-[#0F172A] placeholder-[#94A3B8] focus:border-[#0F766E] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/10 disabled:cursor-not-allowed disabled:opacity-60"
-              
-              placeholder="Enter your password"
-            />
-          </div>
+              {isLoading ? (
+                <>
+                  <svg
+                    className="mr-2 h-4 w-4 animate-spin"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </Button>
+          </form>
+        </CardContent>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="flex w-full items-center justify-center rounded bg-[#0F766E] px-4 py-3 text-base font-semibold text-white transition-colors hover:bg-[#0D6560] focus:outline-none focus:ring-2 focus:ring-[#0F766E]/10 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-            
-          >
-            {isLoading ? (
-              <>
-                <svg
-                  className="mr-2 h-4 w-4 animate-spin text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Signing in...
-              </>
-            ) : (
-              "Sign In"
-            )}
-          </button>
-        </form>
+        <Separator className="mt-8" />
 
-        <p className="mt-10 text-center text-[#94A3B8]" style={{ fontSize: "11px", fontFamily: "'DM Sans', sans-serif" }}>
-          Mississippi Department of Health &middot; Secure Access
-        </p>
-      </div>
+        <CardFooter className="justify-center border-t-0 bg-transparent px-0 pb-0 pt-4">
+          <p className="text-xs text-muted-foreground">
+            Secure Access
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

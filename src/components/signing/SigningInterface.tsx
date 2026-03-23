@@ -9,6 +9,9 @@ import {
   type TouchEvent as ReactTouchEvent,
 } from "react";
 import ChatPanel from "@/components/chat/ChatPanel";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import type { ContractType } from "@/types";
 
 // ─── Props ───────────────────────────────────────────────────────────────────
@@ -214,13 +217,13 @@ export default function SigningInterface({
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
       {/* Left panel — Contract document (60%) */}
-      <div className="flex-1 overflow-y-auto border-r border-slate-200 bg-white p-6 lg:w-3/5 lg:p-10">
+      <div className="flex-1 overflow-y-auto border-r border-border bg-background p-6 lg:w-3/5 lg:p-10">
         {/* Header */}
-        <div className="mb-8 border-b border-slate-200 pb-6">
+        <div className="mb-8 pb-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0F766E]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary">
               <svg
-                className="h-5 w-5 text-white"
+                className="h-5 w-5 text-primary-foreground"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -234,68 +237,75 @@ export default function SigningInterface({
               </svg>
             </div>
             <div>
-              <h1 className="text-xl text-slate-900" style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}>
+              <h1
+                className="text-xl font-bold text-foreground"
+                style={{ fontFamily: "'Satoshi', sans-serif" }}
+              >
                 HIPAApotamus
               </h1>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 HIPAA BAA Management System
               </p>
             </div>
           </div>
         </div>
 
+        <Separator className="mb-8" />
+
         {/* Contract content */}
         <div className="prose prose-slate max-w-none">
           <h2
-            className="text-[22px] font-bold text-slate-900"
-            style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
+            className="text-[24px] font-bold text-foreground"
+            style={{ fontFamily: "'Satoshi', sans-serif" }}
           >
             {CONTRACT_LABELS[contractType]}
           </h2>
 
-          <div className="mt-4 grid grid-cols-2 gap-4 rounded-lg bg-slate-50 p-4 text-sm">
+          <div className="mt-4 grid grid-cols-2 gap-4 rounded-lg bg-muted/50 p-4 text-sm">
             <div>
-              <span className="font-medium text-slate-600">
+              <span className="font-medium text-muted-foreground">
                 Covered Entity:
               </span>
-              <p className="text-slate-900">{clinicName}</p>
+              <p className="text-foreground">{clinicName}</p>
             </div>
             <div>
-              <span className="font-medium text-slate-600">
+              <span className="font-medium text-muted-foreground">
                 Business Associate:
               </span>
-              <p className="text-slate-900">{vendorName}</p>
+              <p className="text-foreground">{vendorName}</p>
             </div>
             <div>
-              <span className="font-medium text-slate-600">
+              <span className="font-medium text-muted-foreground">
                 Effective Date:
               </span>
-              <p className="text-slate-900">{formattedEffective}</p>
+              <p className="text-foreground">{formattedEffective}</p>
             </div>
             <div>
-              <span className="font-medium text-slate-600">
+              <span className="font-medium text-muted-foreground">
                 Expiration Date:
               </span>
-              <p className="text-slate-900">{formattedExpiration}</p>
+              <p className="text-foreground">{formattedExpiration}</p>
             </div>
             <div>
-              <span className="font-medium text-slate-600">Term:</span>
-              <p className="text-slate-900">
+              <span className="font-medium text-muted-foreground">Term:</span>
+              <p className="text-foreground">
                 {termYears} year{termYears > 1 ? "s" : ""}
               </p>
             </div>
             <div>
-              <span className="font-medium text-slate-600">
+              <span className="font-medium text-muted-foreground">
                 Template Version:
               </span>
-              <p className="text-slate-900">{templateVersion}</p>
+              <p className="text-foreground">{templateVersion}</p>
             </div>
           </div>
 
-          <h3 className="mt-6 text-lg font-semibold text-slate-900">
+          <Separator className="my-6" />
+
+          <h3 className="mt-6 text-lg font-semibold text-foreground">
             1. Definitions
           </h3>
-          <p className="text-sm leading-relaxed text-slate-700">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             This Business Associate Agreement (&ldquo;Agreement&rdquo;) is
             entered into by and between <strong>{clinicName}</strong>{" "}
             (&ldquo;Covered Entity&rdquo;) and <strong>{vendorName}</strong>{" "}
@@ -306,10 +316,10 @@ export default function SigningInterface({
             at 45 CFR Parts 160 and 164.
           </p>
 
-          <h3 className="mt-6 text-lg font-semibold text-slate-900">
+          <h3 className="mt-6 text-lg font-semibold text-foreground">
             2. Obligations of Business Associate
           </h3>
-          <p className="text-sm leading-relaxed text-slate-700">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Business Associate agrees to: (a) not use or disclose Protected
             Health Information (PHI) other than as permitted or required by this
             Agreement; (b) use appropriate safeguards to prevent unauthorized
@@ -319,10 +329,10 @@ export default function SigningInterface({
             to the same restrictions and conditions.
           </p>
 
-          <h3 className="mt-6 text-lg font-semibold text-slate-900">
+          <h3 className="mt-6 text-lg font-semibold text-foreground">
             3. Permitted Uses and Disclosures
           </h3>
-          <p className="text-sm leading-relaxed text-slate-700">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Business Associate may use or disclose PHI solely to perform
             services as specified in the underlying service agreement, and as
             required by law. Business Associate may use PHI for its proper
@@ -330,10 +340,10 @@ export default function SigningInterface({
             responsibilities.
           </p>
 
-          <h3 className="mt-6 text-lg font-semibold text-slate-900">
+          <h3 className="mt-6 text-lg font-semibold text-foreground">
             4. Breach Notification
           </h3>
-          <p className="text-sm leading-relaxed text-slate-700">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             Business Associate shall report to Covered Entity any Breach of
             Unsecured PHI without unreasonable delay and in no case later than
             the timeline specified in the service agreement. The notification
@@ -344,10 +354,10 @@ export default function SigningInterface({
 
           {requiresStateLawRetentionNotice && (
             <>
-              <h3 className="mt-6 text-lg font-semibold text-slate-900">
+              <h3 className="mt-6 text-lg font-semibold text-foreground">
                 5. Mississippi State Law Compliance
               </h3>
-              <p className="text-sm leading-relaxed text-slate-700">
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 In addition to federal HIPAA requirements, Business Associate
                 acknowledges that Mississippi state law requires a minimum 10-year
                 retention period for medical records. Business Associate shall
@@ -358,10 +368,10 @@ export default function SigningInterface({
             </>
           )}
 
-          <h3 className="mt-6 text-lg font-semibold text-slate-900">
+          <h3 className="mt-6 text-lg font-semibold text-foreground">
             {requiresStateLawRetentionNotice ? "6" : "5"}. Term and Termination
           </h3>
-          <p className="text-sm leading-relaxed text-slate-700">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             This Agreement shall be effective as of {formattedEffective} and
             shall terminate on {formattedExpiration}, or when all PHI provided
             by Covered Entity to Business Associate is destroyed or returned to
@@ -371,136 +381,155 @@ export default function SigningInterface({
       </div>
 
       {/* Right panel — Chat + Signature (40%) */}
-      <div className="flex flex-col bg-slate-50 lg:w-2/5">
+      <div className="flex flex-col bg-muted/30 lg:w-2/5">
         {/* Vendor AI Chat */}
-        <div className="flex-1 border-b border-slate-200 p-4">
-          <h3 className="mb-3 text-sm font-semibold text-slate-700">
-            Questions about this agreement?
-          </h3>
-          <ChatPanel
-            context="vendor"
-            contextId={vendorId}
-            placeholder="Ask about this agreement..."
-            className="h-[280px]"
-          />
-        </div>
+        <Card className="flex-1 rounded-none border-0 shadow-none ring-0 border-b border-border">
+          <CardHeader className="px-4 pb-0">
+            <h3
+              className="text-base font-semibold text-foreground"
+              style={{ fontFamily: "'Satoshi', sans-serif" }}
+            >
+              Questions about this agreement?
+            </h3>
+          </CardHeader>
+          <CardContent className="px-4">
+            <ChatPanel
+              context="vendor"
+              contextId={vendorId}
+              placeholder="Ask about this agreement..."
+              className="h-[280px]"
+            />
+          </CardContent>
+        </Card>
+
+        <Separator />
 
         {/* Signature area */}
-        <div className="p-4">
-          {submitResult?.success ? (
-            <div className="rounded-xl bg-[#CCFBF1] p-6 text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#CCFBF1]">
-                <svg
-                  className="h-6 w-6 text-[#0F766E]"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-              <p className="font-medium text-[#0F766E]">
-                {submitResult.message}
-              </p>
-            </div>
-          ) : (
-            <>
-              <h3 className="mb-3 text-sm font-semibold text-slate-700">
-                Sign below
-              </h3>
-
-              {/* Canvas */}
-              <div className="relative rounded-lg border-2 border-dashed border-slate-300 bg-white">
-                <canvas
-                  ref={canvasRef}
-                  className="h-32 w-full cursor-crosshair touch-none"
-                  onMouseDown={startDrawing}
-                  onMouseMove={draw}
-                  onMouseUp={stopDrawing}
-                  onMouseLeave={stopDrawing}
-                  onTouchStart={startDrawing}
-                  onTouchMove={draw}
-                  onTouchEnd={stopDrawing}
-                />
-                {!hasSignature && (
-                  <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-slate-400">
-                    Draw your signature here
-                  </p>
-                )}
-              </div>
-
-              {hasSignature && (
-                <button
-                  onClick={clearSignature}
-                  className="mt-1 text-xs text-slate-400 hover:text-slate-600"
-                >
-                  Clear signature
-                </button>
-              )}
-
-              {/* Agreement checkbox */}
-              <label className="mt-4 flex items-start gap-2">
-                <input
-                  type="checkbox"
-                  checked={agreedToTerms}
-                  onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#0F766E] focus:ring-[#0F766E]/20"
-                />
-                <span className="text-xs leading-relaxed text-slate-600">
-                  I have read and agree to the terms of this Business Associate
-                  Agreement. I am authorized to sign on behalf of{" "}
-                  <strong>{vendorName}</strong>.
-                </span>
-              </label>
-
-              {/* Error */}
-              {submitResult && !submitResult.success && (
-                <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
-                  {submitResult.message}
+        <Card className="rounded-none border-0 shadow-none ring-0">
+          <CardContent className="px-4 py-4">
+            {submitResult?.success ? (
+              <div className="rounded-xl bg-primary/10 p-6 text-center">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15">
+                  <svg
+                    className="h-6 w-6 text-primary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
                 </div>
-              )}
+                <p className="font-medium text-primary">
+                  {submitResult.message}
+                </p>
+              </div>
+            ) : (
+              <>
+                <h3
+                  className="mb-3 text-base font-semibold text-foreground"
+                  style={{ fontFamily: "'Satoshi', sans-serif" }}
+                >
+                  Sign below
+                </h3>
 
-              {/* Sign button */}
-              <button
-                onClick={handleSign}
-                disabled={!hasSignature || !agreedToTerms || isSubmitting}
-                className="mt-4 w-full rounded-lg bg-[#0F766E] py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0D6560] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg
-                      className="h-4 w-4 animate-spin"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    Signing...
-                  </span>
-                ) : (
-                  "Sign Agreement"
+                {/* Canvas */}
+                <div className="relative rounded-lg border border-border bg-background">
+                  <canvas
+                    ref={canvasRef}
+                    className="h-40 w-full cursor-crosshair touch-none"
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseLeave={stopDrawing}
+                    onTouchStart={startDrawing}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDrawing}
+                  />
+                  {!hasSignature && (
+                    <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+                      Draw your signature here
+                    </p>
+                  )}
+                </div>
+
+                {hasSignature && (
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    onClick={clearSignature}
+                    className="mt-1 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Clear signature
+                  </Button>
                 )}
-              </button>
-            </>
-          )}
-        </div>
+
+                <Separator className="my-4" />
+
+                {/* Agreement checkbox */}
+                <label className="mt-4 flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary/20"
+                  />
+                  <span className="text-sm leading-relaxed text-muted-foreground">
+                    I have read and agree to the terms of this Business Associate
+                    Agreement. I am authorized to sign on behalf of{" "}
+                    <strong className="text-foreground">{vendorName}</strong>.
+                  </span>
+                </label>
+
+                {/* Error */}
+                {submitResult && !submitResult.success && (
+                  <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-2 text-sm text-destructive">
+                    {submitResult.message}
+                  </div>
+                )}
+
+                {/* Sign button */}
+                <Button
+                  onClick={handleSign}
+                  disabled={!hasSignature || !agreedToTerms || isSubmitting}
+                  size="lg"
+                  className="mt-4 w-full h-11 text-[16px] font-semibold"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg
+                        className="h-4 w-4 animate-spin"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+                      Signing...
+                    </span>
+                  ) : (
+                    "Sign Agreement"
+                  )}
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

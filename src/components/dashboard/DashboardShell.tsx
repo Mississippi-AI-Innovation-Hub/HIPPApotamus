@@ -11,6 +11,8 @@ import AddVendorModal from "@/components/dashboard/AddVendorModal";
 import ReminderScheduler from "@/components/dashboard/ReminderScheduler";
 import AuditPacketModal from "@/components/dashboard/AuditPacketModal";
 import DevTools from "@/components/dashboard/DevTools";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -100,7 +102,7 @@ export default function DashboardShell({
   }, []);
 
   return (
-    <div className="flex h-screen bg-slate-100">
+    <div className="flex h-screen bg-background">
       <Sidebar
         userName={userName}
         userRole={userRole}
@@ -109,121 +111,104 @@ export default function DashboardShell({
         activeTab={activeTab}
       />
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[1100px] space-y-8 px-6 py-8 lg:px-10">
-      {/* Page header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1
-            className="text-2xl font-semibold text-slate-900"
-            style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
-          >
-            BAA Management Dashboard
-          </h1>
-          <p className="mt-1 text-[11px] font-medium uppercase tracking-wider text-slate-400">
-            HIPAA Compliance Overview
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setAuditPacketOpen(true)}
-            className="flex items-center gap-2 rounded border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-            </svg>
-            Audit Packet
-          </button>
-          <button
-            type="button"
-            onClick={() => setAddVendorOpen(true)}
-            className="flex items-center gap-2 rounded bg-[#0F766E] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0D6560]"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Add Vendor
-          </button>
-        </div>
-      </div>
+        <div className="mx-auto max-w-[1400px] space-y-8 px-8 py-8">
+          {/* Page header */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1
+                className="text-2xl font-bold tracking-tight text-foreground"
+                style={{ fontFamily: "'Satoshi', sans-serif" }}
+              >
+                BAA Management Dashboard
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                HIPAA Compliance &mdash; Business Associate Agreements
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setAuditPacketOpen(true)}
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+                Audit Packet
+              </Button>
+              <Button onClick={() => setAddVendorOpen(true)}>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Add Vendor
+              </Button>
+            </div>
+          </div>
 
-      {/* Stats */}
-      <StatsRow
-        totalVendors={stats.totalVendors}
-        activeBAAs={stats.activeBAAs}
-        expiringSoon={stats.expiringSoon}
-        expired={stats.expired}
-      />
-
-      {/* Tab bar */}
-      <div className="border-b border-slate-200">
-        <nav className="-mb-px flex gap-6" aria-label="Dashboard tabs">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 border-b-2 pb-3 pt-2 text-sm font-medium transition-colors ${
-                activeTab === tab.key
-                  ? "border-[#0F766E] text-[#0F766E]"
-                  : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
-              }`}
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
-              </svg>
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Tab content */}
-      <div>
-        {activeTab === "contracts" && (
-          <BAATable
-            baas={baas}
-            vendors={vendors}
-            onSelectBAA={setSelectedBAA}
+          {/* Stats */}
+          <StatsRow
+            totalVendors={stats.totalVendors}
+            activeBAAs={stats.activeBAAs}
+            expiringSoon={stats.expiringSoon}
+            expired={stats.expired}
           />
-        )}
 
-        {activeTab === "vendors" && (
-          <VendorList
+          {/* Tab bar + content */}
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
+            <TabsList>
+              {TABS.map((tab) => (
+                <TabsTrigger key={tab.key} value={tab.key}>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
+                  </svg>
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            <TabsContent value="contracts">
+              <BAATable
+                baas={baas}
+                vendors={vendors}
+                onSelectBAA={setSelectedBAA}
+              />
+            </TabsContent>
+
+            <TabsContent value="vendors">
+              <VendorList
+                vendors={vendors}
+                baas={baas}
+                onSelectVendor={handleSelectVendor}
+              />
+            </TabsContent>
+
+            <TabsContent value="reminders">
+              <ReminderScheduler baas={baas} vendors={vendors} />
+            </TabsContent>
+          </Tabs>
+
+          {/* Modals */}
+          <BAADetailsModal
+            baa={selectedBAA}
+            vendor={selectedVendor}
+            auditLogs={selectedAuditLogs}
+            onClose={() => setSelectedBAA(null)}
+          />
+
+          <AddVendorModal
+            open={addVendorOpen}
+            onClose={() => setAddVendorOpen(false)}
+            onSuccess={handleRefresh}
+          />
+
+          <AuditPacketModal
+            open={auditPacketOpen}
             vendors={vendors}
             baas={baas}
-            onSelectVendor={handleSelectVendor}
+            onClose={() => setAuditPacketOpen(false)}
           />
-        )}
 
-        {activeTab === "reminders" && (
-          <ReminderScheduler baas={baas} vendors={vendors} />
-        )}
-      </div>
-
-      {/* Modals */}
-      <BAADetailsModal
-        baa={selectedBAA}
-        vendor={selectedVendor}
-        auditLogs={selectedAuditLogs}
-        onClose={() => setSelectedBAA(null)}
-      />
-
-      <AddVendorModal
-        open={addVendorOpen}
-        onClose={() => setAddVendorOpen(false)}
-        onSuccess={handleRefresh}
-      />
-
-      <AuditPacketModal
-        open={auditPacketOpen}
-        vendors={vendors}
-        baas={baas}
-        onClose={() => setAuditPacketOpen(false)}
-      />
-
-      {/* Dev tools — hidden in production */}
-      <DevTools />
+          {/* Dev tools — hidden in production */}
+          <DevTools />
         </div>
       </main>
     </div>

@@ -2,6 +2,17 @@
 
 import { useMemo, useState } from "react";
 import type { BAA, BAAStatus, Vendor } from "@/types";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -49,11 +60,11 @@ function formatDate(dateStr: string): string {
 
 // ─── Status Badge ───────────────────────────────────────────────────────────
 
-const STATUS_STYLES: Record<BAAStatus, string> = {
-  active: "bg-[#DCFCE7] text-[#15803D]",
-  expiring_soon: "bg-[#FEF3C7] text-[#B45309]",
-  expired: "bg-[#FEE2E2] text-[#B91C1C]",
-  pending_signature: "bg-[#DBEAFE] text-[#1D4ED8]",
+const STATUS_BADGE_VARIANT: Record<BAAStatus, "default" | "secondary" | "destructive" | "outline"> = {
+  active: "default",
+  expiring_soon: "outline",
+  expired: "destructive",
+  pending_signature: "secondary",
 };
 
 const STATUS_LABELS: Record<BAAStatus, string> = {
@@ -65,11 +76,9 @@ const STATUS_LABELS: Record<BAAStatus, string> = {
 
 function StatusBadge({ status }: { status: BAAStatus }) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLES[status]}`}
-    >
+    <Badge variant={STATUS_BADGE_VARIANT[status]}>
       {STATUS_LABELS[status]}
-    </span>
+    </Badge>
   );
 }
 
@@ -110,31 +119,28 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
   }, [baas, vendors, filter, search]);
 
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
       {/* Toolbar */}
-      <div className="flex flex-col gap-4 border-b border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Filter pills */}
         <div className="flex flex-wrap gap-1.5">
           {FILTERS.map((f) => (
-            <button
+            <Button
               key={f.key}
-              type="button"
+              variant={filter === f.key ? "default" : "outline"}
+              size="sm"
+              className="rounded-full"
               onClick={() => setFilter(f.key)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
-                filter === f.key
-                  ? "bg-[#0F766E] text-white shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
             >
               {f.label}
-            </button>
+            </Button>
           ))}
         </div>
 
         {/* Search */}
         <div className="relative">
           <svg
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={2}
@@ -146,99 +152,97 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
               d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
             />
           </svg>
-          <input
+          <Input
             type="text"
             placeholder="Search vendors..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition-colors focus:border-[#0F766E] focus:ring-2 focus:ring-[#0F766E]/10 sm:w-64"
+            className="pl-9 sm:w-64"
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
-              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                Vendor
-              </th>
-              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                Type
-              </th>
-              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                Status
-              </th>
-              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                Effective
-              </th>
-              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                Expires
-              </th>
-              <th className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                Days Left
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {filteredBAAs.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-400">
-                  No contracts match the current filters.
-                </td>
-              </tr>
-            ) : (
-              filteredBAAs.map((baa) => {
-                const days = daysUntilExpiration(baa.expirationDate);
-                return (
-                  <tr
-                    key={baa.id}
-                    onClick={() => onSelectBAA(baa)}
-                    className="cursor-pointer transition-colors hover:bg-slate-50"
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        onSelectBAA(baa);
-                      }
-                    }}
-                  >
-                    <td className="px-4 py-3.5">
-                      <div className="text-sm font-medium text-slate-900">
-                        {getVendorName(vendors, baa.vendorId)}
-                      </div>
-                      <div className="font-mono text-[11px] text-slate-400">
-                        {baa.id}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-slate-600">
-                      {getVendorType(vendors, baa.vendorId)}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <StatusBadge status={baa.status} />
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-slate-600">
-                      {formatDate(baa.effectiveDate)}
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-slate-600">
-                      {formatDate(baa.expirationDate)}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <DaysIndicator days={days} status={baa.status} />
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/50">
+            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Vendor
+            </TableHead>
+            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Type
+            </TableHead>
+            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Status
+            </TableHead>
+            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Effective
+            </TableHead>
+            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Expires
+            </TableHead>
+            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Days Left
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredBAAs.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
+                No contracts match the current filters.
+              </TableCell>
+            </TableRow>
+          ) : (
+            filteredBAAs.map((baa) => {
+              const days = daysUntilExpiration(baa.expirationDate);
+              return (
+                <TableRow
+                  key={baa.id}
+                  onClick={() => onSelectBAA(baa)}
+                  className="cursor-pointer hover:bg-muted/50"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelectBAA(baa);
+                    }
+                  }}
+                >
+                  <TableCell>
+                    <div className="text-sm font-semibold text-foreground">
+                      {getVendorName(vendors, baa.vendorId)}
+                    </div>
+                    <div className="font-mono text-xs text-muted-foreground">
+                      {baa.id}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {getVendorType(vendors, baa.vendorId)}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={baa.status} />
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {formatDate(baa.effectiveDate)}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {formatDate(baa.expirationDate)}
+                  </TableCell>
+                  <TableCell>
+                    <DaysIndicator days={days} status={baa.status} />
+                  </TableCell>
+                </TableRow>
+              );
+            })
+          )}
+        </TableBody>
+      </Table>
 
       {/* Footer */}
-      <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
-        <p className="text-xs text-slate-400">
+      <div className="border-t border-border bg-muted/50 px-4 py-3">
+        <p className="text-xs text-muted-foreground">
           Showing {filteredBAAs.length} of {baas.length} contracts
         </p>
       </div>
@@ -250,12 +254,12 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
 
 function DaysIndicator({ days, status }: { days: number; status: BAAStatus }) {
   if (status === "pending_signature") {
-    return <span className="text-sm text-slate-400">--</span>;
+    return <span className="text-sm text-muted-foreground">--</span>;
   }
 
   if (days < 0) {
     return (
-      <span className="inline-flex items-center gap-1 text-sm font-semibold text-[#B91C1C]">
+      <span className="inline-flex items-center gap-1 text-sm font-semibold text-destructive">
         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
         </svg>
@@ -265,12 +269,12 @@ function DaysIndicator({ days, status }: { days: number; status: BAAStatus }) {
   }
 
   if (days <= 30) {
-    return <span className="text-sm font-semibold text-[#B91C1C]">{days}d</span>;
+    return <span className="text-sm font-semibold text-destructive">{days}d</span>;
   }
 
   if (days <= 90) {
-    return <span className="text-sm font-semibold text-[#B45309]">{days}d</span>;
+    return <span className="text-sm font-semibold text-warning">{days}d</span>;
   }
 
-  return <span className="text-sm text-slate-600">{days}d</span>;
+  return <span className="text-sm text-muted-foreground">{days}d</span>;
 }
