@@ -61,6 +61,7 @@ export default function DashboardShell({
   const [selectedBAA, setSelectedBAA] = useState<BAA | null>(null);
   const [addVendorOpen, setAddVendorOpen] = useState(false);
   const [auditPacketOpen, setAuditPacketOpen] = useState(false);
+  const [copilotOpen, setCopilotOpen] = useState(false);
 
   // Compute stats
   const stats = useMemo(() => {
@@ -215,8 +216,26 @@ export default function DashboardShell({
         </div>
       </main>
 
-      {/* Right: AI Compliance Agent Panel */}
-      <aside className="hidden w-[380px] shrink-0 flex-col border-l border-border bg-card xl:flex">
+      {/* Floating toggle button — visible when panel is closed */}
+      {!copilotOpen && (
+        <button
+          onClick={() => setCopilotOpen(true)}
+          className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl active:scale-95"
+          style={{ background: "linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)" }}
+          title="Open HIPAA Copilot"
+        >
+          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z" />
+          </svg>
+        </button>
+      )}
+
+      {/* Right: AI Compliance Agent Panel — collapsible */}
+      <aside
+        className={`flex shrink-0 flex-col border-l border-border bg-card transition-all duration-300 ease-in-out ${
+          copilotOpen ? "w-[380px]" : "w-0 overflow-hidden border-l-0"
+        }`}
+      >
         {/* Hero header — makes it immediately clear what this is */}
         <div
           className="relative overflow-hidden border-b border-border px-6 py-5"
@@ -241,7 +260,7 @@ export default function DashboardShell({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456Z" />
                 </svg>
               </div>
-              <div>
+              <div className="flex-1">
                 <h3 className="text-base font-bold text-white" style={{ fontFamily: "'Satoshi', sans-serif" }}>
                   HIPAA Copilot
                 </h3>
@@ -253,6 +272,16 @@ export default function DashboardShell({
                   <p className="text-xs font-medium text-emerald-300">Ready</p>
                 </div>
               </div>
+              {/* Close button */}
+              <button
+                onClick={() => setCopilotOpen(false)}
+                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                title="Close HIPAA Copilot"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-slate-300">
               Your AI-powered compliance assistant. Ask questions, run actions, or get insights — all from here.
