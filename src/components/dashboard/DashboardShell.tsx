@@ -142,8 +142,6 @@ export default function DashboardShell({
         userName={userName}
         userRole={userRole}
         userEmail={userEmail}
-        onNavigate={(tab) => setActiveTab(tab as Tab)}
-        activeTab={activeTab}
       />
 
       {/* Center: Main content */}
