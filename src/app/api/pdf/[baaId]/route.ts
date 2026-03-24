@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRequiredSession } from "@/lib/auth/session";
 import { getBAAById, getVendorById, getClinic, addAuditLog } from "@/lib/db";
 import { generateContractPDF, generateAuditPacket } from "@/lib/pdf/generator";
-import { uploadToS3, getPresignedUrl } from "@/lib/storage/s3";
+import { uploadToS3, getPresignedUrl, getObjectFromS3 } from "@/lib/storage/s3";
 import { logger } from "@/lib/logger";
 
 interface RouteContext {
@@ -19,6 +19,7 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const format = searchParams.get("format") ?? "pdf"; // "pdf" or "packet"
     const upload = searchParams.get("upload") === "true";
+    const stored = searchParams.get("stored") === "true";
 
     const baa = await getBAAById(baaId);
     if (!baa) {
@@ -46,12 +47,45 @@ export async function GET(
       );
     }
 
+    // ── Serve stored signed PDF if requested and available ───────────────────
+    if (stored && baa.signedDocumentUrl) {
+      try {
+        const storedPdf = await getObjectFromS3(baa.signedDocumentUrl);
+        if (storedPdf) {
+          logger.info("Serving stored signed PDF from S3", { baaId, key: baa.signedDocumentUrl });
+
+          await addAuditLog({
+            baaId,
+            vendorId: baa.vendorId,
+            action: "Stored signed PDF served",
+            performedBy: session.name ?? session.email,
+            details: { key: baa.signedDocumentUrl },
+            ipAddress: request.headers.get("x-forwarded-for"),
+          });
+
+          return new NextResponse(new Uint8Array(storedPdf), {
+            headers: {
+              "Content-Type": "application/pdf",
+              "Content-Disposition": `inline; filename="BAA_${baaId}_signed.pdf"`,
+            },
+          });
+        }
+      } catch (s3Error) {
+        logger.warn("Failed to fetch stored PDF from S3, falling back to regeneration", {
+          baaId,
+          key: baa.signedDocumentUrl,
+          error: s3Error instanceof Error ? s3Error.message : String(s3Error),
+        });
+        // Fall through to regeneration below
+      }
+    }
+
     // Audit log
     await addAuditLog({
       baaId,
       vendorId: baa.vendorId,
       action: `PDF ${format} generated`,
-      performedBy: session.id,
+      performedBy: session.name ?? session.email,
       details: { format, upload },
       ipAddress: request.headers.get("x-forwarded-for"),
     });

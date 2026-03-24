@@ -74,7 +74,7 @@ export async function PATCH(
         baaId: baas[0]!.id,
         vendorId: id,
         action: "Vendor information updated",
-        performedBy: session.id,
+        performedBy: session.name ?? session.email,
         details: { updatedFields: Object.keys(body).join(", ") },
         ipAddress: request.headers.get("x-forwarded-for"),
       });
@@ -115,6 +115,16 @@ export async function DELETE(
         { status: 500 },
       );
     }
+
+    // Audit log for vendor deletion
+    await addAuditLog({
+      baaId: "system",
+      vendorId: id,
+      action: "Vendor deleted",
+      performedBy: session.name ?? session.email,
+      details: { vendorName: vendor.name, vendorType: vendor.type },
+      ipAddress: request.headers.get("x-forwarded-for"),
+    });
 
     logger.info("Vendor deleted via API", {
       vendorId: id,

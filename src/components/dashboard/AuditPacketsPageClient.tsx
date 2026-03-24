@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AuditLog, BAA, Vendor } from "@/types";
 import { useToast } from "@/components/ui/Toast";
+import PDFPreviewModal from "@/components/dashboard/PDFPreviewModal";
 import {
   Card,
   CardContent,
@@ -101,6 +102,7 @@ interface PacketDocument {
   type: "contract" | "audit-trail" | "executive-summary" | "state-addendum";
   size: string;
   vendorName?: string;
+  baaId?: string;
 }
 
 interface GeneratedPacketWithDocs extends GeneratedPacket {
@@ -196,7 +198,9 @@ export default function AuditPacketsPageClient({
   const [status, setStatus] = useState<GenerationStatus>("idle");
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState("");
-  const [packets, setPackets] = useState<GeneratedPacketWithDocs[]>(DEMO_PACKETS);
+  const [packets, setPackets] = useState<GeneratedPacketWithDocs[]>([]);
+  const [previewBaaId, setPreviewBaaId] = useState<string | null>(null);
+  const [previewVendorName, setPreviewVendorName] = useState("");
   const [expandedPacketId, setExpandedPacketId] = useState<string | null>(null);
 
   // Ref for scrolling to generation section
@@ -291,7 +295,7 @@ export default function AuditPacketsPageClient({
           ...Array.from(selectedBAAIds).map((baaId) => {
             const baa = baas.find((b) => b.id === baaId);
             const vendor = baa ? vendors.find((v) => v.id === baa.vendorId) : null;
-            return { id: `${packetId}-${baaId}`, name: `BAA — ${vendor?.name ?? baaId}`, type: "contract" as const, size: "890 KB", vendorName: vendor?.name };
+            return { id: `${packetId}-${baaId}`, name: `BAA — ${vendor?.name ?? baaId}`, type: "contract" as const, size: "890 KB", vendorName: vendor?.name, baaId };
           }),
           ...(options.includeAuditTrail ? [{ id: `${packetId}-trail`, name: "Full Audit Trail", type: "audit-trail" as const, size: "320 KB" }] : []),
         ],
@@ -1009,10 +1013,42 @@ export default function AuditPacketsPageClient({
                                         )}
                                       </div>
                                       <span className="font-mono text-xs text-muted-foreground">{doc.size}</span>
+                                      {doc.type === "contract" && doc.baaId && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setPreviewBaaId(doc.baaId!);
+                                            setPreviewVendorName(doc.vendorName ?? doc.name);
+                                          }}
+                                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-primary/5 hover:text-primary hover:border-primary/30"
+                                          title={`Preview ${doc.name}`}
+                                        >
+                                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                          </svg>
+                                        </button>
+                                      )}
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          addToast(`Downloading ${doc.name}...`, "info");
+                                          if (doc.type === "contract" && doc.baaId) {
+                                            // Download real PDF for contract documents
+                                            fetch(`/api/pdf/${doc.baaId}`)
+                                              .then(res => res.blob())
+                                              .then(blob => {
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement("a");
+                                                a.href = url;
+                                                a.download = `${doc.name}.pdf`;
+                                                a.click();
+                                                URL.revokeObjectURL(url);
+                                                addToast(`Downloaded ${doc.name}`, "success");
+                                              })
+                                              .catch(() => addToast(`Failed to download ${doc.name}`, "error"));
+                                          } else {
+                                            addToast(`${doc.name} is not yet available for download`, "warning");
+                                          }
                                         }}
                                         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                                         title={`Download ${doc.name}`}
@@ -1047,6 +1083,15 @@ export default function AuditPacketsPageClient({
           )}
         </CardContent>
       </Card>
+
+      {/* PDF Preview Modal */}
+      {previewBaaId && (
+        <PDFPreviewModal
+          baaId={previewBaaId}
+          vendorName={previewVendorName}
+          onClose={() => { setPreviewBaaId(null); setPreviewVendorName(""); }}
+        />
+      )}
 
       {/* ── Section 5: What's Included ── */}
       <Card className="shadow-premium">

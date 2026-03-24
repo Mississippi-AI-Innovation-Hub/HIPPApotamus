@@ -140,20 +140,27 @@ export async function getRecentAuditLogs(
     // or a separate "recent logs" partition. For now, we scan with a limit.
     const { ScanCommand } = await import("@aws-sdk/lib-dynamodb");
 
-    const result = await docClient.send(
-      new ScanCommand({
-        TableName: TABLE_NAME,
-        FilterExpression:
-          "entityType = :et",
-        ExpressionAttributeValues: {
-          ":et": "AuditLog",
-        },
-        Limit: limit * 5, // over-fetch since Limit applies before filter
-      }),
-    );
+    // Paginate through the entire table to find all audit logs.
+    // DynamoDB Scan with filter only applies Limit to items scanned (not results),
+    // so we must paginate to ensure we find all matching records.
+    let allItems: Record<string, unknown>[] = [];
+    let lastKey: Record<string, unknown> | undefined;
 
-    const logs = (result.Items ?? [])
-      .map((item) => stripKeys(item as AuditLogRecord))
+    do {
+      const result = await docClient.send(
+        new ScanCommand({
+          TableName: TABLE_NAME,
+          FilterExpression: "entityType = :et",
+          ExpressionAttributeValues: { ":et": "AuditLog" },
+          ExclusiveStartKey: lastKey,
+        }),
+      );
+      allItems = allItems.concat(result.Items ?? []);
+      lastKey = result.LastEvaluatedKey;
+    } while (lastKey);
+
+    const logs = allItems
+      .map((item) => stripKeys(item as unknown as AuditLogRecord))
       .sort(
         (a, b) =>
           new Date(b.performedAt).getTime() -

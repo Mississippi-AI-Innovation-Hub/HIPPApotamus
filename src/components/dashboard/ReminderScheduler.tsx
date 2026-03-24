@@ -97,6 +97,7 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
           to: event.vendor.contactEmail,
           params: {
             vendorName: event.vendor.name,
+            vendorId: event.vendor.id,
             contactName: event.vendor.contactName,
             clinicName: CLINIC_NAME,
             baaId: event.baa.id,
@@ -121,6 +122,7 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
           params: {
             vendorName: event.vendor.name,
             clinicName: CLINIC_NAME,
+            vendorId: event.vendor.id,
             baaId: event.baa.id,
             action: "Expiration reminder sent",
             performedBy: "Admin",
@@ -169,7 +171,8 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
               vendorName: event.vendor.name,
               contactName: event.vendor.contactName,
               clinicName: CLINIC_NAME,
-              baaId: event.baa.id,
+              vendorId: event.vendor.id,
+            baaId: event.baa.id,
               daysUntilExpiration: event.daysRemaining,
               renewalUrl,
             },
@@ -191,7 +194,8 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
               params: {
                 vendorName: event.vendor.name,
                 clinicName: CLINIC_NAME,
-                baaId: event.baa.id,
+                vendorId: event.vendor.id,
+            baaId: event.baa.id,
                 action: "Expiration reminder sent (batch)",
                 performedBy: "Admin",
                 timestamp: new Date().toISOString(),

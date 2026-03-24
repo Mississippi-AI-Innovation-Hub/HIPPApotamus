@@ -277,6 +277,7 @@ export default function BAADetailsModal({
           to: currentVendor.contactEmail,
           params: {
             vendorName: currentVendor.name,
+            vendorId: currentVendor.id,
             contactName: currentVendor.contactName,
             clinicName: CLINIC_NAME,
             baaId: currentBaa.id,
@@ -300,6 +301,7 @@ export default function BAADetailsModal({
           to: ADMIN_EMAIL,
           params: {
             vendorName: currentVendor.name,
+            vendorId: currentVendor.id,
             clinicName: CLINIC_NAME,
             baaId: currentBaa.id,
             action: "Expiration reminder sent",
@@ -322,8 +324,12 @@ export default function BAADetailsModal({
 
   const handleDownloadPDF = async () => {
     try {
-      addToast("Generating PDF...", "info");
-      const response = await fetch(`/api/pdf/${currentBaa.id}`);
+      const hasStoredPdf = !!currentBaa.signedDocumentUrl;
+      addToast(hasStoredPdf ? "Fetching signed PDF..." : "Generating PDF...", "info");
+      const apiUrl = hasStoredPdf
+        ? `/api/pdf/${currentBaa.id}?stored=true`
+        : `/api/pdf/${currentBaa.id}`;
+      const response = await fetch(apiUrl);
       if (!response.ok) {
         throw new Error(`Server responded with ${response.status}`);
       }
@@ -562,6 +568,7 @@ export default function BAADetailsModal({
         <PDFPreviewModal
           baaId={currentBaa.id}
           vendorName={currentVendor.name}
+          signedDocumentUrl={currentBaa.signedDocumentUrl}
           onClose={() => setPreviewPDF(false)}
         />
       )}

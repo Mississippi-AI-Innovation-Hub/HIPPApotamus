@@ -105,6 +105,12 @@ export async function POST(request: NextRequest) {
       signedDate: null,
       signedBy: null,
       documentUrl: null,
+      signedDocumentUrl: null,
+      signingCertificate: null,
+      signedSnapshot: null,
+      documentVersion: 1,
+      parentBaaId: null,
+      versionType: "original",
       templateVersion: body.templateVersion ?? "v1.0.0",
       termYears,
       requiresStateLawRetentionNotice:
@@ -116,7 +122,7 @@ export async function POST(request: NextRequest) {
       baaId: baa.id,
       vendorId: vendor.id,
       action: "BAA created and invitation sent",
-      performedBy: session.id,
+      performedBy: session.name ?? session.email,
       details: {
         vendorName: vendor.name,
         contactEmail: vendor.contactEmail,

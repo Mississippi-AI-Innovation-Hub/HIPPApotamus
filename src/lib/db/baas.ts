@@ -6,7 +6,7 @@ import {
   QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { docClient, TABLE_NAME } from "./client";
-import type { BAA, BAAStatus } from "@/types";
+import type { BAA, BAAStatus, SigningCertificate, SignedSnapshot } from "@/types";
 import { logger } from "@/lib/logger";
 import crypto from "node:crypto";
 
@@ -316,6 +316,12 @@ export async function updateBAA(
       signedDate: updatedBAA.signedDate,
       signedBy: updatedBAA.signedBy,
       documentUrl: updatedBAA.documentUrl,
+      signedDocumentUrl: updatedBAA.signedDocumentUrl,
+      signingCertificate: updatedBAA.signingCertificate,
+      signedSnapshot: updatedBAA.signedSnapshot,
+      documentVersion: updatedBAA.documentVersion,
+      parentBaaId: updatedBAA.parentBaaId,
+      versionType: updatedBAA.versionType,
       templateVersion: updatedBAA.templateVersion,
       termYears: updatedBAA.termYears,
       requiresStateLawRetentionNotice:
@@ -359,6 +365,11 @@ export async function updateBAA(
 export async function signBAA(
   id: string,
   signedBy: string,
+  extra?: {
+    signedDocumentUrl?: string | null;
+    signingCertificate?: SigningCertificate | null;
+    signedSnapshot?: SignedSnapshot | null;
+  },
 ): Promise<BAA | null> {
   try {
     const now = new Date().toISOString();
@@ -366,6 +377,9 @@ export async function signBAA(
       status: "active",
       signedDate: now,
       signedBy,
+      ...(extra?.signedDocumentUrl !== undefined && { signedDocumentUrl: extra.signedDocumentUrl }),
+      ...(extra?.signingCertificate !== undefined && { signingCertificate: extra.signingCertificate }),
+      ...(extra?.signedSnapshot !== undefined && { signedSnapshot: extra.signedSnapshot }),
     });
   } catch (error) {
     logger.error("Failed to sign BAA", {

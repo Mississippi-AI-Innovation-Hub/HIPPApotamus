@@ -76,6 +76,34 @@ export async function getPresignedUrl(
   }
 }
 
+export async function getObjectFromS3(key: string): Promise<Buffer | null> {
+  try {
+    const result = await s3Client.send(
+      new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+      }),
+    );
+
+    if (!result.Body) return null;
+
+    // Convert the readable stream to a Buffer
+    const chunks: Uint8Array[] = [];
+    const stream = result.Body as AsyncIterable<Uint8Array>;
+    for await (const chunk of stream) {
+      chunks.push(chunk);
+    }
+    logger.info("File downloaded from S3", { key });
+    return Buffer.concat(chunks);
+  } catch (error) {
+    logger.error("Failed to download from S3", {
+      key,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+}
+
 export async function deleteFromS3(key: string): Promise<boolean> {
   try {
     await s3Client.send(

@@ -32,6 +32,32 @@ export type ContractType =
   | "baa_medical_records_storage_roi_services"
   | "other";
 
+// ─── Signing / Snapshot Types ─────────────────────────────────────────────────
+
+export interface SigningCertificate {
+  signerName: string;
+  signerEmail: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  timestamp: string;
+  consentGrantedAt: string;
+  method: 'drawn_signature' | 'typed_name' | 'click_to_accept';
+}
+
+export interface SignedSnapshot {
+  vendorName: string;
+  vendorAddress: string;
+  vendorContactName: string;
+  vendorContactEmail: string;
+  clinicName: string;
+  clinicAddress: string;
+  effectiveDate: string;
+  expirationDate: string;
+  contractType: string;
+  templateVersion: string;
+  termYears: number;
+}
+
 // ─── Core Domain Objects ──────────────────────────────────────────────────────
 
 export interface Vendor {
@@ -84,6 +110,18 @@ export interface BAA {
    * Flag is set for DataVault-class vendors to surface this requirement in the UI.
    */
   requiresStateLawRetentionNotice: boolean;
+  /** S3 key for the immutable signed PDF. Null until signed. */
+  signedDocumentUrl: string | null;
+  /** Signing ceremony metadata captured at time of signing. */
+  signingCertificate: SigningCertificate | null;
+  /** Frozen snapshot of contract data at signing time. */
+  signedSnapshot: SignedSnapshot | null;
+  /** Document version: 1 for original, increments for amendments/renewals. */
+  documentVersion: number;
+  /** Links to the parent BAA if this is an amendment or renewal. */
+  parentBaaId: string | null;
+  /** Type of this document version. */
+  versionType: 'original' | 'amendment' | 'renewal' | 'extension';
   createdAt: string;
   updatedAt: string;
 }
@@ -155,6 +193,12 @@ export interface VendorSeedRecord {
     | "signedDate"
     | "signedBy"
     | "documentUrl"
+    | "signedDocumentUrl"
+    | "signingCertificate"
+    | "signedSnapshot"
+    | "documentVersion"
+    | "parentBaaId"
+    | "versionType"
     | "createdAt"
     | "updatedAt"
   >;

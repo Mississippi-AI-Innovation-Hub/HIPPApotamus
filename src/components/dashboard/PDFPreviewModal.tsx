@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 interface PDFPreviewModalProps {
   baaId: string | null;
   vendorName: string;
+  /** If the BAA has a stored signed PDF, pass the S3 key to serve it directly. */
+  signedDocumentUrl?: string | null;
   onClose: () => void;
 }
 
-export default function PDFPreviewModal({ baaId, vendorName, onClose }: PDFPreviewModalProps) {
+export default function PDFPreviewModal({ baaId, vendorName, signedDocumentUrl, onClose }: PDFPreviewModalProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -20,7 +22,11 @@ export default function PDFPreviewModal({ baaId, vendorName, onClose }: PDFPrevi
     setError(false);
     setPdfUrl(null);
 
-    fetch(`/api/pdf/${baaId}`)
+    const apiUrl = signedDocumentUrl
+      ? `/api/pdf/${baaId}?stored=true`
+      : `/api/pdf/${baaId}`;
+
+    fetch(apiUrl)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to generate PDF");
         return res.blob();
@@ -39,7 +45,7 @@ export default function PDFPreviewModal({ baaId, vendorName, onClose }: PDFPrevi
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baaId]);
+  }, [baaId, signedDocumentUrl]);
 
   const handleDownload = useCallback(() => {
     if (!pdfUrl || !baaId) return;

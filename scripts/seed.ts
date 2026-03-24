@@ -97,6 +97,12 @@ interface BAASeed {
   termYears: 1 | 2;
   requiresStateLawRetentionNotice: boolean;
   contractType: ContractType;
+  signedDocumentUrl?: string | null;
+  signingCertificate?: unknown;
+  signedSnapshot?: unknown;
+  documentVersion?: number;
+  parentBaaId?: string | null;
+  versionType?: 'original' | 'amendment' | 'renewal' | 'extension';
 }
 
 const now = new Date().toISOString();
@@ -175,10 +181,26 @@ interface AuditSeed {
 function generateAuditLogs(): AuditSeed[] {
   const logs: AuditSeed[] = [];
   let logIndex = 1;
+  const today = new Date();
+  const ADMIN_NAME = "Dr. Catherine Brooks";
+
+  // Clamp a date to the past — if it's in the future, shift it back
+  function clampToPast(date: Date, maxDaysAgo: number = 3): Date {
+    if (date > today) {
+      // Put it a few days ago instead
+      const daysAgo = maxDaysAgo + Math.floor(Math.random() * 10);
+      return new Date(today.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+    }
+    return date;
+  }
 
   for (const baa of baas) {
     const vendor = vendors.find((v) => v.id === baa.vendorId);
     const vendorName = vendor?.name ?? "Unknown";
+
+    const effectiveDate = new Date(baa.effectiveDate);
+    const createdDate = clampToPast(new Date(effectiveDate.getTime() - 7 * 24 * 60 * 60 * 1000), 5);
+    const invitedDate = clampToPast(new Date(createdDate.getTime() + 1 * 24 * 60 * 60 * 1000), 4);
 
     // Log 1: BAA created
     logs.push({
@@ -186,10 +208,8 @@ function generateAuditLogs(): AuditSeed[] {
       baaId: baa.id,
       vendorId: baa.vendorId,
       action: "BAA created",
-      performedBy: "user-001",
-      performedAt: new Date(
-        new Date(baa.effectiveDate).getTime() - 7 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
+      performedBy: ADMIN_NAME,
+      performedAt: createdDate.toISOString(),
       details: { vendorName, contractType: baa.contractType },
       ipAddress: "192.168.1.100",
     });
@@ -200,10 +220,8 @@ function generateAuditLogs(): AuditSeed[] {
       baaId: baa.id,
       vendorId: baa.vendorId,
       action: "Invitation email sent",
-      performedBy: "system",
-      performedAt: new Date(
-        new Date(baa.effectiveDate).getTime() - 6 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
+      performedBy: "System",
+      performedAt: invitedDate.toISOString(),
       details: {
         recipient: vendor?.contactEmail ?? "",
         vendorName,
@@ -213,26 +231,26 @@ function generateAuditLogs(): AuditSeed[] {
 
     // Log 3: Status-dependent action
     if (baa.signedDate) {
+      const signedDate = clampToPast(new Date(baa.signedDate));
       logs.push({
         id: `log-${String(logIndex++).padStart(3, "0")}`,
         baaId: baa.id,
         vendorId: baa.vendorId,
         action: "BAA signed",
-        performedBy: "user-001",
-        performedAt: baa.signedDate,
+        performedBy: baa.signedBy ?? vendorName,
+        performedAt: signedDate.toISOString(),
         details: { signedBy: baa.signedBy ?? "", vendorName },
         ipAddress: "192.168.1.100",
       });
     } else {
+      const reminderDate = clampToPast(new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000));
       logs.push({
         id: `log-${String(logIndex++).padStart(3, "0")}`,
         baaId: baa.id,
         vendorId: baa.vendorId,
         action: "Reminder sent",
-        performedBy: "system",
-        performedAt: new Date(
-          new Date(baa.effectiveDate).getTime() - 1 * 24 * 60 * 60 * 1000,
-        ).toISOString(),
+        performedBy: "System",
+        performedAt: reminderDate.toISOString(),
         details: {
           type: "pending_signature_reminder",
           vendorName,
@@ -296,6 +314,12 @@ async function seed(): Promise<void> {
       ...baa,
       clinicId: CLINIC_ID,
       documentUrl: null,
+      signedDocumentUrl: baa.signedDocumentUrl ?? null,
+      signingCertificate: baa.signingCertificate ?? null,
+      signedSnapshot: baa.signedSnapshot ?? null,
+      documentVersion: baa.documentVersion ?? 1,
+      parentBaaId: baa.parentBaaId ?? null,
+      versionType: baa.versionType ?? "original",
       templateVersion: "v1.0.0",
       createdAt: now,
       updatedAt: now,
@@ -312,19 +336,11 @@ async function seed(): Promise<void> {
     });
   }
 
-  console.log("Seeding audit logs...");
-  const auditLogs = generateAuditLogs();
-  for (const log of auditLogs) {
-    await putItem({
-      PK: `BAA#${log.baaId}`,
-      SK: `LOG#${log.performedAt}#${log.id}`,
-      entityType: "AuditLog",
-      ...log,
-    });
-  }
+  // Audit logs are NOT seeded — they are created organically through real user actions.
+  // This ensures the history page only shows genuine events.
 
   console.log(
-    `Seeding complete: 1 clinic, ${vendors.length} vendors, ${baas.length} BAAs, ${auditLogs.length} audit logs.`,
+    `Seeding complete: 1 clinic, ${vendors.length} vendors, ${baas.length} BAAs. Audit logs will be created from real actions.`,
   );
   /* eslint-enable no-console */
 }

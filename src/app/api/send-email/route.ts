@@ -7,6 +7,7 @@ import {
   signedConfirmationEmail,
   adminNotificationEmail,
 } from "@/lib/email/templates";
+import { addAuditLog } from "@/lib/db";
 import { logger } from "@/lib/logger";
 
 type EmailType = "invitation" | "reminder" | "signed_confirmation" | "admin_notification";
@@ -19,7 +20,7 @@ interface SendEmailBody {
 
 export async function POST(request: NextRequest) {
   try {
-    await getRequiredSession();
+    const session = await getRequiredSession();
     const body = (await request.json()) as SendEmailBody;
 
     if (!body.type || !body.to || !body.params) {
@@ -95,6 +96,20 @@ export async function POST(request: NextRequest) {
         { status: 500 },
       );
     }
+
+    // Audit log for successful email send
+    await addAuditLog({
+      baaId: String(body.params["baaId"] ?? "system"),
+      vendorId: String(body.params["vendorId"] ?? ""),
+      action: `${body.type} email sent`,
+      performedBy: session.name ?? session.email,
+      details: {
+        emailType: body.type,
+        to: body.to,
+        subject: emailContent.subject,
+      },
+      ipAddress: request.headers.get("x-forwarded-for"),
+    });
 
     return NextResponse.json({
       success: true,

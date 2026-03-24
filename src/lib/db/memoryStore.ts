@@ -3,7 +3,7 @@
  * Used when DYNAMODB_TABLE_NAME is not set.
  * Pre-seeded with Mississippi DOH demo data.
  */
-import type { Vendor, BAA, AuditLog, Clinic, BAAStatus } from "@/types";
+import type { Vendor, BAA, AuditLog, Clinic, BAAStatus, SigningCertificate, SignedSnapshot } from "@/types";
 import { logger } from "@/lib/logger";
 import crypto from "node:crypto";
 
@@ -111,6 +111,12 @@ const BAAS: BAA[] = [
     signedDate: "2024-01-15T14:30:00.000Z",
     signedBy: "j.walsh@carecloud.dev",
     documentUrl: "",
+    signedDocumentUrl: null,
+    signingCertificate: null,
+    signedSnapshot: null,
+    documentVersion: 1,
+    parentBaaId: null,
+    versionType: "original",
     templateVersion: "2025.1",
     termYears: 2,
     requiresStateLawRetentionNotice: true,
@@ -128,6 +134,12 @@ const BAAS: BAA[] = [
     signedDate: "2023-06-01T10:00:00.000Z",
     signedBy: "r.chen@medbridge.dev",
     documentUrl: "",
+    signedDocumentUrl: null,
+    signingCertificate: null,
+    signedSnapshot: null,
+    documentVersion: 1,
+    parentBaaId: null,
+    versionType: "original",
     templateVersion: "2025.1",
     termYears: 2,
     requiresStateLawRetentionNotice: false,
@@ -145,6 +157,12 @@ const BAAS: BAA[] = [
     signedDate: "2022-03-01T09:00:00.000Z",
     signedBy: "m.santos@thconnect.dev",
     documentUrl: "",
+    signedDocumentUrl: null,
+    signingCertificate: null,
+    signedSnapshot: null,
+    documentVersion: 1,
+    parentBaaId: null,
+    versionType: "original",
     templateVersion: "2025.1",
     termYears: 2,
     requiresStateLawRetentionNotice: true,
@@ -162,6 +180,12 @@ const BAAS: BAA[] = [
     signedDate: null,
     signedBy: null,
     documentUrl: "",
+    signedDocumentUrl: null,
+    signingCertificate: null,
+    signedSnapshot: null,
+    documentVersion: 1,
+    parentBaaId: null,
+    versionType: "original",
     templateVersion: "2025.1",
     termYears: 2,
     requiresStateLawRetentionNotice: false,
@@ -179,6 +203,12 @@ const BAAS: BAA[] = [
     signedDate: "2024-07-01T11:00:00.000Z",
     signedBy: "a.thompson@datavault.dev",
     documentUrl: "",
+    signedDocumentUrl: null,
+    signingCertificate: null,
+    signedSnapshot: null,
+    documentVersion: 1,
+    parentBaaId: null,
+    versionType: "original",
     templateVersion: "2025.1",
     termYears: 2,
     requiresStateLawRetentionNotice: true,
@@ -305,7 +335,15 @@ export async function updateBAA(
   return updated;
 }
 
-export async function signBAA(id: string, signedBy: string): Promise<BAA | null> {
+export async function signBAA(
+  id: string,
+  signedBy: string,
+  extra?: {
+    signedDocumentUrl?: string | null;
+    signingCertificate?: SigningCertificate | null;
+    signedSnapshot?: SignedSnapshot | null;
+  },
+): Promise<BAA | null> {
   const existing = store.baas.get(id);
   if (!existing) return null;
   const signed: BAA = {
@@ -313,6 +351,9 @@ export async function signBAA(id: string, signedBy: string): Promise<BAA | null>
     status: "active",
     signedDate: new Date().toISOString(),
     signedBy,
+    ...(extra?.signedDocumentUrl !== undefined && { signedDocumentUrl: extra.signedDocumentUrl }),
+    ...(extra?.signingCertificate !== undefined && { signingCertificate: extra.signingCertificate }),
+    ...(extra?.signedSnapshot !== undefined && { signedSnapshot: extra.signedSnapshot }),
     updatedAt: new Date().toISOString(),
   };
   store.baas.set(id, signed);

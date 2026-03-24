@@ -69,7 +69,7 @@ export async function PATCH(
       baaId: id,
       vendorId: baa.vendorId,
       action: "BAA updated",
-      performedBy: session.id,
+      performedBy: session.name ?? session.email,
       details: { updatedFields: Object.keys(body).join(", ") },
       ipAddress: request.headers.get("x-forwarded-for"),
     });
@@ -106,7 +106,7 @@ export async function DELETE(
       baaId: id,
       vendorId: baa.vendorId,
       action: "BAA deleted",
-      performedBy: session.id,
+      performedBy: session.name ?? session.email,
       details: { status: baa.status },
       ipAddress: request.headers.get("x-forwarded-for"),
     });

@@ -82,6 +82,12 @@ export async function POST(request: NextRequest) {
       signedDate: null,
       signedBy: null,
       documentUrl: null,
+      signedDocumentUrl: null,
+      signingCertificate: null,
+      signedSnapshot: null,
+      documentVersion: 1,
+      parentBaaId: null,
+      versionType: "original",
       templateVersion: body.templateVersion ?? "v1.0.0",
       termYears: body.termYears ?? 2,
       requiresStateLawRetentionNotice:
@@ -92,7 +98,7 @@ export async function POST(request: NextRequest) {
       baaId: baa.id,
       vendorId: baa.vendorId,
       action: "BAA created",
-      performedBy: session.id,
+      performedBy: session.name ?? session.email,
       details: {
         contractType: baa.contractType,
         effectiveDate: baa.effectiveDate,
