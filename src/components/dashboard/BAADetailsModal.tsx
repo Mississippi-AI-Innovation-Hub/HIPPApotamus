@@ -6,6 +6,11 @@ import { useToast } from "@/components/ui/Toast";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import PDFPreviewModal from "@/components/dashboard/PDFPreviewModal";
+
+// ─── Constants ─────────────────────────────────────────────────────────────
+const CLINIC_NAME = "Central Mississippi Health District";
+const ADMIN_EMAIL = "bipuladk60+clinic@gmail.com";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -56,8 +61,8 @@ function formatVendorType(type: string): string {
 
 const STATUS_CONFIG: Record<BAAStatus, { label: string; bg: string; text: string; dot: string }> = {
   active: { label: "Active", bg: "#DCFCE7", text: "#15803D", dot: "#15803D" },
-  expiring_soon: { label: "Expiring Soon", bg: "#FEF3C7", text: "#92400E", dot: "#B45309" },
-  expired: { label: "Expired", bg: "#FEE2E2", text: "#991B1B", dot: "#B91C1C" },
+  expiring_soon: { label: "Expiring Soon", bg: "#FEFCE8", text: "#A16207", dot: "#CA8A04" },
+  expired: { label: "Expired", bg: "#FEF2F2", text: "#B91C1C", dot: "#DC2626" },
   pending_signature: { label: "Pending Signature", bg: "#DBEAFE", text: "#1E40AF", dot: "#1D4ED8" },
 };
 
@@ -191,6 +196,8 @@ export default function BAADetailsModal({
   onClose,
 }: BAADetailsModalProps) {
   const { addToast } = useToast();
+  const [sendingReminder, setSendingReminder] = useState(false);
+  const [previewPDF, setPreviewPDF] = useState(false);
 
   // Track whether the modal is visible (mounted in DOM) independently of the baa prop
   const [visible, setVisible] = useState(false);
@@ -251,11 +258,65 @@ export default function BAADetailsModal({
     (a, b) => new Date(b.performedAt).getTime() - new Date(a.performedAt).getTime()
   );
 
-  const handleSendReminder = () => {
+  const handleSendReminder = async () => {
+    setSendingReminder(true);
     try {
+      const now = new Date();
+      const exp = new Date(currentBaa.expirationDate);
+      const daysUntilExpiration = Math.ceil(
+        (exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      const renewalUrl = `${window.location.origin}/sign/${currentBaa.id}`;
+
+      // Send reminder to vendor
+      const reminderRes = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "reminder",
+          to: currentVendor.contactEmail,
+          params: {
+            vendorName: currentVendor.name,
+            contactName: currentVendor.contactName,
+            clinicName: CLINIC_NAME,
+            baaId: currentBaa.id,
+            daysUntilExpiration,
+            renewalUrl,
+          },
+        }),
+      });
+
+      if (!reminderRes.ok) {
+        const errData = (await reminderRes.json().catch(() => ({}))) as { error?: string };
+        throw new Error(errData.error ?? "Failed to send reminder email");
+      }
+
+      // Send admin notification copy
+      fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "admin_notification",
+          to: ADMIN_EMAIL,
+          params: {
+            vendorName: currentVendor.name,
+            clinicName: CLINIC_NAME,
+            baaId: currentBaa.id,
+            action: "Expiration reminder sent",
+            performedBy: "Admin",
+            timestamp: new Date().toISOString(),
+          },
+        }),
+      }).catch(() => {
+        // Admin notification is best-effort; don't fail the user flow
+      });
+
       addToast(`Reminder sent to ${currentVendor.contactEmail}`, "success");
-    } catch {
-      addToast("Failed to send reminder", "error");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to send reminder";
+      addToast(message, "error");
+    } finally {
+      setSendingReminder(false);
     }
   };
 
@@ -382,7 +443,7 @@ export default function BAADetailsModal({
                 <DetailItem label="Term" value={`${currentBaa.termYears} year${currentBaa.termYears > 1 ? "s" : ""}`} />
               </div>
               {currentBaa.requiresStateLawRetentionNotice && (
-                <div className="mt-3 rounded-lg border border-[#B45309]/20 bg-[#FEF3C7] px-3 py-2 text-xs text-[#B45309]">
+                <div className="mt-3 rounded-lg border border-[#CA8A04]/20 bg-[#FEFCE8] px-3 py-2 text-xs text-[#CA8A04]">
                   <strong>MS State Law:</strong> This vendor requires 10-year medical records retention notice per Mississippi state law.
                 </div>
               )}
@@ -450,11 +511,35 @@ export default function BAADetailsModal({
         {/* Footer — Actions */}
         <div className="border-t border-border bg-muted px-6 py-4">
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleSendReminder} className="bg-[#0F766E] text-white hover:bg-[#0D6560]">
-              Send Reminder
+            <Button
+              onClick={handleSendReminder}
+              disabled={sendingReminder}
+              className="bg-[#0F766E] text-white hover:bg-[#0D6560] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {sendingReminder ? (
+                <span className="flex items-center gap-2">
+                  <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Sending...
+                </span>
+              ) : (
+                "Send Reminder"
+              )}
+            </Button>
+            <Button variant="outline" onClick={() => setPreviewPDF(true)}>
+              <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+              </svg>
+              Preview PDF
             </Button>
             <Button variant="outline" onClick={handleDownloadPDF}>
-              Download PDF
+              <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Download
             </Button>
             <Button variant="outline" onClick={handleMarkForRenewal}>
               Mark for Renewal
@@ -471,6 +556,15 @@ export default function BAADetailsModal({
           </div>
         </div>
       </div>
+
+      {/* PDF Preview Modal */}
+      {previewPDF && (
+        <PDFPreviewModal
+          baaId={currentBaa.id}
+          vendorName={currentVendor.name}
+          onClose={() => setPreviewPDF(false)}
+        />
+      )}
     </>
   );
 }

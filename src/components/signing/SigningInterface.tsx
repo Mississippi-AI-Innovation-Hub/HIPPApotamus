@@ -177,6 +177,7 @@ export default function SigningInterface({
         body: JSON.stringify({
           signature: signatureBase64,
           vendorId,
+          signerName: vendorName,
         }),
       });
 

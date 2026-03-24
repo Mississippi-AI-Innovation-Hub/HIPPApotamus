@@ -151,6 +151,24 @@ export function BaaContractPDF({
             <Text style={styles.metaLabel}>TEMPLATE VERSION:</Text>
             <Text style={styles.metaValue}>{baa.templateVersion}</Text>
           </View>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>STATUS:</Text>
+            <Text style={styles.metaValue}>{baa.status.replace(/_/g, " ").toUpperCase()}</Text>
+          </View>
+          {baa.signedDate && (
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>DATE SIGNED:</Text>
+              <Text style={styles.metaValue}>
+                {new Date(baa.signedDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+              </Text>
+            </View>
+          )}
+          {baa.signedBy && (
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>SIGNED BY:</Text>
+              <Text style={styles.metaValue}>{baa.signedBy}</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.divider} />
@@ -172,28 +190,56 @@ export function BaaContractPDF({
             <Text style={{ ...pdfTypography.body, fontWeight: "bold" }}>
               {clinic.name}
             </Text>
-            <View style={styles.signatureLine} />
-            <Text style={styles.signatureLabel}>Signature</Text>
-            <View style={styles.signatureLine} />
-            <Text style={styles.signatureLabel}>
-              Name: {clinic.hipaaOfficer}
-            </Text>
-            <View style={styles.signatureLine} />
-            <Text style={styles.signatureLabel}>Date</Text>
+            {baa.signedDate ? (
+              <>
+                <Text style={{ ...pdfTypography.body, marginTop: 8, fontStyle: "italic" }}>
+                  Electronically signed
+                </Text>
+                <Text style={styles.signatureLabel}>
+                  Name: {clinic.hipaaOfficer}
+                </Text>
+                <Text style={styles.signatureLabel}>
+                  Date: {new Date(baa.signedDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                </Text>
+              </>
+            ) : (
+              <>
+                <View style={styles.signatureLine} />
+                <Text style={styles.signatureLabel}>Signature</Text>
+                <View style={styles.signatureLine} />
+                <Text style={styles.signatureLabel}>Name: {clinic.hipaaOfficer}</Text>
+                <View style={styles.signatureLine} />
+                <Text style={styles.signatureLabel}>Date: _______________</Text>
+              </>
+            )}
           </View>
           <View style={styles.signatureColumn}>
             <Text style={styles.signatureLabel}>BUSINESS ASSOCIATE</Text>
             <Text style={{ ...pdfTypography.body, fontWeight: "bold" }}>
               {vendor.name}
             </Text>
-            <View style={styles.signatureLine} />
-            <Text style={styles.signatureLabel}>Signature</Text>
-            <View style={styles.signatureLine} />
-            <Text style={styles.signatureLabel}>
-              Name: {vendor.contactName}
-            </Text>
-            <View style={styles.signatureLine} />
-            <Text style={styles.signatureLabel}>Date</Text>
+            {baa.signedDate && baa.signedBy ? (
+              <>
+                <Text style={{ ...pdfTypography.body, marginTop: 8, fontStyle: "italic" }}>
+                  Electronically signed by {baa.signedBy}
+                </Text>
+                <Text style={styles.signatureLabel}>
+                  Name: {baa.signedBy}
+                </Text>
+                <Text style={styles.signatureLabel}>
+                  Date: {new Date(baa.signedDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                </Text>
+              </>
+            ) : (
+              <>
+                <View style={styles.signatureLine} />
+                <Text style={styles.signatureLabel}>Signature</Text>
+                <View style={styles.signatureLine} />
+                <Text style={styles.signatureLabel}>Name: {vendor.contactName}</Text>
+                <View style={styles.signatureLine} />
+                <Text style={styles.signatureLabel}>Date: _______________</Text>
+              </>
+            )}
           </View>
         </View>
 

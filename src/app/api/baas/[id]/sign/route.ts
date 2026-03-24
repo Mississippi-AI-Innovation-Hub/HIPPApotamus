@@ -14,8 +14,26 @@ export async function POST(
   context: RouteContext,
 ) {
   try {
-    const session = await getRequiredSession();
     const { id } = await context.params;
+
+    // Parse request body for signer info
+    let body: { signature?: string; vendorId?: string; signerName?: string } = {};
+    try {
+      body = await request.json();
+    } catch {
+      // No body is fine for authenticated admin signing
+    }
+
+    // Try to get session — but signing page is public, so session may not exist
+    let sessionName = "Unknown Signer";
+    let sessionId = "anonymous";
+    try {
+      const session = await getRequiredSession();
+      sessionName = session.name;
+      sessionId = session.id;
+    } catch {
+      // Public vendor signing — no session required
+    }
 
     const existing = await getBAAById(id);
     if (!existing) {
@@ -32,7 +50,11 @@ export async function POST(
       );
     }
 
-    const baa = await signBAA(id, session.name);
+    // Determine who is signing: use vendor contact name if signing from public page
+    const vendor = await getVendorById(existing.vendorId);
+    const signerName = body.signerName ?? vendor?.contactName ?? sessionName;
+
+    const baa = await signBAA(id, signerName);
     if (!baa) {
       return NextResponse.json(
         { error: "Failed to sign BAA", code: "SIGN_FAILED" },
@@ -45,16 +67,13 @@ export async function POST(
       baaId: id,
       vendorId: baa.vendorId,
       action: "BAA signed",
-      performedBy: session.id,
+      performedBy: sessionId,
       details: {
-        signedBy: session.name,
+        signedBy: signerName,
         signedDate: baa.signedDate ?? "",
       },
       ipAddress: request.headers.get("x-forwarded-for"),
     });
-
-    // Send confirmation email to vendor
-    const vendor = await getVendorById(baa.vendorId);
     if (vendor) {
       const baseUrl =
         process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -62,7 +81,7 @@ export async function POST(
       const confirmationContent = signedConfirmationEmail({
         vendorName: vendor.name,
         contactName: vendor.contactName,
-        clinicName: "Mississippi DOH Central Region",
+        clinicName: "Central Mississippi Health District",
         baaId: id,
         signedDate: baa.signedDate ?? new Date().toISOString(),
         documentUrl: baa.documentUrl ?? `${baseUrl}/baas/${id}`,
@@ -76,10 +95,10 @@ export async function POST(
       // Notify admin
       const adminContent = adminNotificationEmail({
         vendorName: vendor.name,
-        clinicName: "Mississippi DOH Central Region",
+        clinicName: "Central Mississippi Health District",
         baaId: id,
         action: "BAA Signed",
-        performedBy: session.name,
+        performedBy: signerName,
         timestamp: new Date().toISOString(),
       });
 

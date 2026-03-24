@@ -22,12 +22,12 @@ interface UrgentRemindersProps {
 function getBadge(item: UrgentItem): { label: string; bg: string; text: string } {
   switch (item.type) {
     case "expired":
-      return { label: "Overdue", bg: "#FEE2E2", text: "#B91C1C" };
+      return { label: "Overdue", bg: "#FEF2F2", text: "#DC2626" };
     case "expiring":
       return {
         label: `${item.daysLeft} day${item.daysLeft === 1 ? "" : "s"} left`,
-        bg: "#FEF3C7",
-        text: "#B45309",
+        bg: "#FEFCE8",
+        text: "#CA8A04",
       };
     case "pending":
       return { label: "Awaiting signature", bg: "#DBEAFE", text: "#1D4ED8" };
@@ -37,9 +37,9 @@ function getBadge(item: UrgentItem): { label: string; bg: string; text: string }
 function getRowBorder(type: UrgentItem["type"]): string {
   switch (type) {
     case "expired":
-      return "#B91C1C";
+      return "#DC2626";
     case "expiring":
-      return "#B45309";
+      return "#CA8A04";
     case "pending":
       return "#1D4ED8";
   }

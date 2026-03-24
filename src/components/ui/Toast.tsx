@@ -42,9 +42,9 @@ const VARIANT_CLASSES: Record<ToastVariant, string> = {
   success:
     "bg-[#DCFCE7] border-[#15803D]/30 text-[#15803D]",
   error:
-    "bg-[#FEE2E2] border-[#B91C1C]/30 text-[#B91C1C]",
+    "bg-[#FEF2F2] border-[#DC2626]/30 text-[#DC2626]",
   warning:
-    "bg-[#FEF3C7] border-[#B45309]/30 text-[#B45309]",
+    "bg-[#FEFCE8] border-[#CA8A04]/30 text-[#CA8A04]",
   info:
     "bg-[#DBEAFE] border-[#1D4ED8]/30 text-[#1D4ED8]",
 };

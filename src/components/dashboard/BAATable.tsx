@@ -70,17 +70,17 @@ const STATUS_CONFIG: Record<BAAStatus, { label: string; bg: string; text: string
   },
   expiring_soon: {
     label: "Expiring Soon",
-    bg: "#FEF3C7",
-    text: "#92400E",
-    dot: "#B45309",
-    border: "#B45309",
+    bg: "#FEFCE8",
+    text: "#A16207",
+    dot: "#CA8A04",
+    border: "#CA8A04",
   },
   expired: {
     label: "Expired",
-    bg: "#FEE2E2",
-    text: "#991B1B",
-    dot: "#B91C1C",
-    border: "#B91C1C",
+    bg: "#FEF2F2",
+    text: "#B91C1C",
+    dot: "#DC2626",
+    border: "#DC2626",
   },
   pending_signature: {
     label: "Pending Signature",
@@ -299,7 +299,7 @@ function DaysIndicator({ days, status }: { days: number; status: BAAStatus }) {
   }
 
   if (days <= 90) {
-    return <span className="text-sm font-semibold text-[#B45309]">{days}d</span>;
+    return <span className="text-sm font-semibold text-[#CA8A04]">{days}d</span>;
   }
 
   return <span className="text-[15px] text-muted-foreground">{days}d</span>;

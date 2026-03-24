@@ -16,14 +16,14 @@ interface ExpirationTimelineProps {
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function getBarColor(monthOffset: number): string {
-  if (monthOffset === 0) return "#B91C1C"; // this month — red
-  if (monthOffset <= 2) return "#B45309"; // next 2 months — amber
+  if (monthOffset === 0) return "#DC2626"; // this month — red
+  if (monthOffset <= 2) return "#CA8A04"; // next 2 months — amber
   return "#64748B"; // later — slate
 }
 
 function getBarBg(monthOffset: number): string {
-  if (monthOffset === 0) return "#FEE2E2";
-  if (monthOffset <= 2) return "#FEF3C7";
+  if (monthOffset === 0) return "#FEF2F2";
+  if (monthOffset <= 2) return "#FEFCE8";
   return "#F1F5F9";
 }
 
@@ -76,8 +76,8 @@ export default function ExpirationTimeline({ buckets }: ExpirationTimelineProps)
       {/* Legend */}
       <div className="flex items-center gap-4 mt-2 pt-2 border-t border-border/50">
         {[
-          { label: "This month", color: "#B91C1C" },
-          { label: "2-3 months", color: "#B45309" },
+          { label: "This month", color: "#DC2626" },
+          { label: "2-3 months", color: "#CA8A04" },
           { label: "Later", color: "#64748B" },
         ].map((item) => (
           <div key={item.label} className="flex items-center gap-1.5">

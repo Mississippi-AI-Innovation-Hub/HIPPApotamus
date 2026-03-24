@@ -18,6 +18,10 @@ interface ReminderEvent {
   thresholds: number[];
 }
 
+// ─── Constants ──────────────────────────────────────────────────────────────
+const CLINIC_NAME = "Central Mississippi Health District";
+const ADMIN_EMAIL = "bipuladk60+clinic@gmail.com";
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function daysUntilExpiration(expirationDate: string): number {
@@ -55,6 +59,7 @@ function getActiveThresholds(days: number): number[] {
 export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerProps) {
   const { addToast } = useToast();
   const [sendingAll, setSendingAll] = useState(false);
+  const [sendAllProgress, setSendAllProgress] = useState({ current: 0, total: 0 });
   const [sendingIds, setSendingIds] = useState<Set<string>>(new Set());
 
   const reminderEvents = useMemo(() => {
@@ -82,11 +87,52 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
     const id = event.baa.id;
     setSendingIds((prev) => new Set(prev).add(id));
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const renewalUrl = `${window.location.origin}/sign/${event.baa.id}`;
+
+      const res = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "reminder",
+          to: event.vendor.contactEmail,
+          params: {
+            vendorName: event.vendor.name,
+            contactName: event.vendor.contactName,
+            clinicName: CLINIC_NAME,
+            baaId: event.baa.id,
+            daysUntilExpiration: event.daysRemaining,
+            renewalUrl,
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(errData.error ?? "Failed to send reminder");
+      }
+
+      // Best-effort admin notification
+      fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "admin_notification",
+          to: ADMIN_EMAIL,
+          params: {
+            vendorName: event.vendor.name,
+            clinicName: CLINIC_NAME,
+            baaId: event.baa.id,
+            action: "Expiration reminder sent",
+            performedBy: "Admin",
+            timestamp: new Date().toISOString(),
+          },
+        }),
+      }).catch(() => {});
+
       addToast(`Reminder sent to ${event.vendor.contactEmail}`, "success");
-    } catch {
-      addToast(`Failed to send reminder to ${event.vendor.name}`, "error");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to send reminder";
+      addToast(`Failed to send reminder to ${event.vendor.name}: ${message}`, "error");
     } finally {
       setSendingIds((prev) => {
         const next = new Set(prev);
@@ -97,19 +143,78 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
   };
 
   const handleScheduleAll = async () => {
+    const total = reminderEvents.length;
+    if (total === 0) return;
+
     setSendingAll(true);
-    try {
-      // Simulate batch API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      addToast(
-        `${reminderEvents.length} reminders scheduled successfully`,
-        "success"
-      );
-    } catch {
-      addToast("Failed to schedule reminders", "error");
-    } finally {
-      setSendingAll(false);
+    setSendAllProgress({ current: 0, total });
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < total; i++) {
+      const event = reminderEvents[i];
+      setSendAllProgress({ current: i + 1, total });
+
+      try {
+        const renewalUrl = `${window.location.origin}/sign/${event.baa.id}`;
+
+        const res = await fetch("/api/send-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "reminder",
+            to: event.vendor.contactEmail,
+            params: {
+              vendorName: event.vendor.name,
+              contactName: event.vendor.contactName,
+              clinicName: CLINIC_NAME,
+              baaId: event.baa.id,
+              daysUntilExpiration: event.daysRemaining,
+              renewalUrl,
+            },
+          }),
+        });
+
+        if (!res.ok) {
+          failCount++;
+        } else {
+          successCount++;
+
+          // Best-effort admin notification
+          fetch("/api/send-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "admin_notification",
+              to: ADMIN_EMAIL,
+              params: {
+                vendorName: event.vendor.name,
+                clinicName: CLINIC_NAME,
+                baaId: event.baa.id,
+                action: "Expiration reminder sent (batch)",
+                performedBy: "Admin",
+                timestamp: new Date().toISOString(),
+              },
+            }),
+          }).catch(() => {});
+        }
+      } catch {
+        failCount++;
+      }
     }
+
+    if (failCount === 0) {
+      addToast(`All ${successCount} reminders sent successfully`, "success");
+    } else {
+      addToast(
+        `${successCount} sent, ${failCount} failed. Please retry failed reminders individually.`,
+        failCount === total ? "error" : "info",
+      );
+    }
+
+    setSendingAll(false);
+    setSendAllProgress({ current: 0, total: 0 });
   };
 
   return (
@@ -135,7 +240,9 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             )}
-            {sendingAll ? "Scheduling..." : "Schedule All"}
+            {sendingAll
+              ? `Sending ${sendAllProgress.current} of ${sendAllProgress.total}...`
+              : "Schedule All"}
           </button>
         )}
       </div>

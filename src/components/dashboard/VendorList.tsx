@@ -36,8 +36,8 @@ const STATUS_DOT: Record<BAAStatus, string> = {
 
 const STATUS_BAR_COLORS: Record<BAAStatus, string> = {
   active: "#15803D",
-  expiring_soon: "#B45309",
-  expired: "#B91C1C",
+  expiring_soon: "#CA8A04",
+  expired: "#DC2626",
   pending_signature: "#64748B",
 };
 

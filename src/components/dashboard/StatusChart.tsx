@@ -13,8 +13,8 @@ interface StatusChartProps {
 
 const SEGMENTS = [
   { key: "active", label: "Active", color: "#15803D" },
-  { key: "expiringSoon", label: "Expiring Soon", color: "#B45309" },
-  { key: "expired", label: "Expired", color: "#B91C1C" },
+  { key: "expiringSoon", label: "Expiring Soon", color: "#CA8A04" },
+  { key: "expired", label: "Expired", color: "#DC2626" },
   { key: "pending", label: "Pending Signature", color: "#1D4ED8" },
 ] as const;
 

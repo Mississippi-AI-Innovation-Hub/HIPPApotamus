@@ -126,10 +126,10 @@ export default function StatsRow({
       <StatCard
         label="Expiring Soon"
         value={expiringSoon}
-        iconBg="#FEF3C7"
-        iconColor="#B45309"
-        textColor="#B45309"
-        sparklineGradient="linear-gradient(90deg, #FEF3C7, #B45309)"
+        iconBg="#FEFCE8"
+        iconColor="#CA8A04"
+        textColor="#CA8A04"
+        sparklineGradient="linear-gradient(90deg, #FEFCE8, #CA8A04)"
         stagger="stagger-3"
         icon={
           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -143,10 +143,10 @@ export default function StatsRow({
       <StatCard
         label="Expired / Pending"
         value={expired}
-        iconBg="#FEE2E2"
-        iconColor="#B91C1C"
-        textColor="#B91C1C"
-        sparklineGradient="linear-gradient(90deg, #FEE2E2, #B91C1C)"
+        iconBg="#FEF2F2"
+        iconColor="#DC2626"
+        textColor="#DC2626"
+        sparklineGradient="linear-gradient(90deg, #FEF2F2, #DC2626)"
         stagger="stagger-4"
         icon={
           <div className="relative">
