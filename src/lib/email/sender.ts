@@ -11,8 +11,8 @@ interface SendEmailParams {
 }
 
 const FROM_ADDRESS =
-  process.env.SES_FROM_ADDRESS ?? "noreply@hipaapotamus.example.com";
-const isDev = process.env.NODE_ENV === "development";
+  process.env.SES_FROM_EMAIL ?? process.env.SES_FROM_ADDRESS ?? "";
+const hasSES = !!FROM_ADDRESS;
 
 export async function sendEmail(params: SendEmailParams): Promise<{
   success: boolean;
@@ -22,13 +22,14 @@ export async function sendEmail(params: SendEmailParams): Promise<{
   const { to, subject, html, text, replyTo } = params;
   const toAddresses = Array.isArray(to) ? to : [to];
 
-  if (isDev) {
-    logger.info("DEV MODE: Email would be sent", {
+  // If SES is not configured, log and skip
+  if (!hasSES) {
+    logger.info("SES not configured: Email would be sent", {
       to: toAddresses.join(", "),
       subject,
       textPreview: text.substring(0, 200),
     });
-    return { success: true, messageId: `dev-${Date.now()}` };
+    return { success: true, messageId: `nosend-${Date.now()}` };
   }
 
   try {
