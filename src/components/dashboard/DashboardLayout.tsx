@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { UserRole } from "@/types";
 import Sidebar from "@/components/dashboard/Sidebar";
 
@@ -24,6 +24,14 @@ export default function DashboardLayout({
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [copilotWidth, setCopilotWidth] = useState(380);
   const [isResizing, setIsResizing] = useState(false);
+  const [aiStatus, setAiStatus] = useState<{ available: boolean; provider: string }>({ available: false, provider: "none" });
+
+  useEffect(() => {
+    fetch("/api/ai-status")
+      .then(res => res.json())
+      .then(data => setAiStatus(data))
+      .catch(() => setAiStatus({ available: false, provider: "none" }));
+  }, []);
 
   // Drag-to-resize handler
   const handleResizeStart = useCallback(
@@ -221,11 +229,22 @@ export default function DashboardLayout({
                   HIPAA Copilot
                 </h3>
                 <div className="mt-0.5 flex items-center gap-1.5">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-                  </span>
-                  <p className="text-xs font-medium text-emerald-300">Ready</p>
+                  {aiStatus.available ? (
+                    <>
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                      </span>
+                      <p className="text-xs font-medium text-emerald-300">
+                        Online — {aiStatus.provider === "gemini" ? "Gemini" : "OpenAI"}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <span className="h-2 w-2 rounded-full bg-amber-400" />
+                      <p className="text-xs font-medium text-amber-300">No API key configured</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

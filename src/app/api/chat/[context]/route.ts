@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getOpenAIClient, AI_MODEL, isAIAvailable } from "@/lib/ai/openai";
+import { isAIAvailable, getAIProvider, getOpenAIClient, AI_MODEL } from "@/lib/ai/openai";
+import { streamGeminiChat } from "@/lib/ai/gemini";
 import {
   contractAgentPrompt,
   vendorAgentPrompt,
@@ -131,50 +132,60 @@ export async function POST(
       systemPrompt = coordinatorAgentPrompt(allBAAs, vendors, recentLogs, clinic);
     }
 
-    // Build messages array for OpenAI
-    const chatMessages: ChatCompletionMessageParam[] = [
-      { role: "system", content: systemPrompt },
-      ...body.messages.map((msg) => ({
-        role: msg.role as "user" | "assistant",
-        content: msg.content,
-      })),
-    ];
+    const provider = getAIProvider();
 
     logger.info("AI chat request", {
       context,
+      provider,
       userId: session.id,
       messageCount: body.messages.length,
     });
 
-    // Stream response
-    const openai = getOpenAIClient();
-    const stream = await openai.chat.completions.create({
-      model: AI_MODEL,
-      messages: chatMessages,
-      stream: true,
-      temperature: 0.3,
-      max_tokens: 2048,
-    });
+    const userMessages = body.messages.map((msg) => ({
+      role: msg.role as "user" | "assistant",
+      content: msg.content,
+    }));
 
-    // Create a ReadableStream from the OpenAI stream
-    const encoder = new TextEncoder();
-    const readableStream = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const chunk of stream) {
-            const content = chunk.choices[0]?.delta?.content;
-            if (content) {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+    let readableStream: ReadableStream;
+
+    if (provider === "gemini") {
+      // ── Gemini streaming ──
+      readableStream = await streamGeminiChat(systemPrompt, userMessages);
+    } else {
+      // ── OpenAI streaming ──
+      const chatMessages: ChatCompletionMessageParam[] = [
+        { role: "system", content: systemPrompt },
+        ...userMessages,
+      ];
+
+      const openai = getOpenAIClient();
+      const stream = await openai.chat.completions.create({
+        model: AI_MODEL,
+        messages: chatMessages,
+        stream: true,
+        temperature: 0.3,
+        max_tokens: 2048,
+      });
+
+      const encoder = new TextEncoder();
+      readableStream = new ReadableStream({
+        async start(controller) {
+          try {
+            for await (const chunk of stream) {
+              const content = chunk.choices[0]?.delta?.content;
+              if (content) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+              }
             }
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+          } catch (error) {
+            logger.error("OpenAI stream error", { error: String(error) });
+            controller.error(error);
           }
-          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-          controller.close();
-        } catch (error) {
-          logger.error("Stream error", { error: String(error) });
-          controller.error(error);
-        }
-      },
-    });
+        },
+      });
+    }
 
     return new Response(readableStream, {
       headers: {

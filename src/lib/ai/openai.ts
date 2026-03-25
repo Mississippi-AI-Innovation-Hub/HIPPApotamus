@@ -1,14 +1,24 @@
 import OpenAI from "openai";
 import { logger } from "@/lib/logger";
+import { isGeminiAvailable } from "./gemini";
 
 let clientInstance: OpenAI | null = null;
 
 /**
- * Returns a singleton OpenAI client. The API key is read from the
- * OPENAI_API_KEY environment variable at first access.
+ * Check if ANY AI provider is available.
+ * Prefers: Gemini (free) → OpenAI → Bedrock (future)
  */
 export function isAIAvailable(): boolean {
-  return !!process.env.OPENAI_API_KEY;
+  return isGeminiAvailable() || !!process.env.OPENAI_API_KEY;
+}
+
+/**
+ * Get the active AI provider name.
+ */
+export function getAIProvider(): "gemini" | "openai" | "none" {
+  if (isGeminiAvailable()) return "gemini";
+  if (process.env.OPENAI_API_KEY) return "openai";
+  return "none";
 }
 
 export function getOpenAIClient(): OpenAI {
@@ -24,5 +34,4 @@ export function getOpenAIClient(): OpenAI {
   return clientInstance;
 }
 
-/** The model used for all AI agent interactions. */
 export const AI_MODEL = "gpt-4o" as const;
