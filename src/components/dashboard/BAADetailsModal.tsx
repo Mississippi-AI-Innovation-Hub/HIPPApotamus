@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import PDFPreviewModal from "@/components/dashboard/PDFPreviewModal";
+import CounterSignModal from "@/components/dashboard/CounterSignModal";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const CLINIC_NAME = "Central Mississippi Health District";
@@ -64,6 +65,9 @@ const STATUS_CONFIG: Record<BAAStatus, { label: string; bg: string; text: string
   expiring_soon: { label: "Expiring Soon", bg: "#FEFCE8", text: "#A16207", dot: "#CA8A04" },
   expired: { label: "Expired", bg: "#FEF2F2", text: "#B91C1C", dot: "#DC2626" },
   pending_signature: { label: "Pending Signature", bg: "#DBEAFE", text: "#1E40AF", dot: "#1D4ED8" },
+  pending_countersignature: { label: "Awaiting Counter-Signature", bg: "#F0F9FF", text: "#0369A1", dot: "#0EA5E9" },
+  terminated: { label: "Terminated", bg: "#FEF2F2", text: "#991B1B", dot: "#991B1B" },
+  declined: { label: "Declined", bg: "#F3F4F6", text: "#6B7280", dot: "#6B7280" },
 };
 
 // ─── Status Timeline ────────────────────────────────────────────────────────
@@ -75,15 +79,41 @@ interface TimelineStep {
 }
 
 function getTimelineSteps(status: BAAStatus): TimelineStep[] {
-  const order: BAAStatus[] = ["pending_signature", "active", "expiring_soon", "expired"];
+  // Terminated/declined are special — show them as ended at the appropriate step
+  if (status === "terminated") {
+    return [
+      { label: "Created", reached: true, active: false },
+      { label: "Sent", reached: true, active: false },
+      { label: "Signed", reached: true, active: false },
+      { label: "Counter-Signed", reached: true, active: false },
+      { label: "Terminated", reached: true, active: true },
+    ];
+  }
+  if (status === "declined") {
+    return [
+      { label: "Created", reached: true, active: false },
+      { label: "Sent", reached: true, active: false },
+      { label: "Declined", reached: true, active: true },
+    ];
+  }
+
+  // Normal lifecycle: Created → Sent → Signed → Counter-Signed → Active → Expiring → Expired
+  const order: BAAStatus[] = [
+    "pending_signature",
+    "pending_countersignature",
+    "active",
+    "expiring_soon",
+    "expired",
+  ];
   const currentIdx = order.indexOf(status);
 
   return [
     { label: "Created", reached: true, active: false },
     { label: "Sent", reached: true, active: false },
-    { label: "Signed", reached: currentIdx >= 1, active: status === "active" },
-    { label: "Expiring", reached: currentIdx >= 2, active: status === "expiring_soon" },
-    { label: "Expired", reached: currentIdx >= 3, active: status === "expired" },
+    { label: "Signed", reached: currentIdx >= 1, active: status === "pending_countersignature" },
+    { label: "Counter-Signed", reached: currentIdx >= 2, active: status === "active" },
+    { label: "Expiring", reached: currentIdx >= 3, active: status === "expiring_soon" },
+    { label: "Expired", reached: currentIdx >= 4, active: status === "expired" },
   ];
 }
 
@@ -198,6 +228,7 @@ export default function BAADetailsModal({
   const { addToast } = useToast();
   const [sendingReminder, setSendingReminder] = useState(false);
   const [previewPDF, setPreviewPDF] = useState(false);
+  const [showCounterSign, setShowCounterSign] = useState(false);
 
   // Track whether the modal is visible (mounted in DOM) independently of the baa prop
   const [visible, setVisible] = useState(false);
@@ -266,7 +297,13 @@ export default function BAADetailsModal({
       const daysUntilExpiration = Math.ceil(
         (exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
       );
-      const renewalUrl = `${window.location.origin}/sign/${currentBaa.id}`;
+      // Generate a signed URL for the renewal link
+      const linkRes = await fetch(`/api/baas/${currentBaa.id}/signing-link`);
+      let renewalUrl = `${window.location.origin}/sign/${currentBaa.id}`;
+      if (linkRes.ok) {
+        const linkData = (await linkRes.json()) as { signingUrl: string };
+        renewalUrl = linkData.signingUrl;
+      }
 
       // Send reminder to vendor
       const reminderRes = await fetch("/api/send-email", {
@@ -356,16 +393,26 @@ export default function BAADetailsModal({
     }
   };
 
-  const handleCopySigningLink = () => {
+  const handleCopySigningLink = async () => {
     try {
-      const link = `${window.location.origin}/sign/${currentBaa.id}`;
-      navigator.clipboard.writeText(link).then(
-        () => addToast("Signing link copied to clipboard", "success"),
-        () => addToast("Failed to copy link", "error")
-      );
+      const res = await fetch(`/api/baas/${currentBaa.id}/signing-link`);
+      if (!res.ok) throw new Error("Failed to generate signing link");
+      const { signingUrl } = (await res.json()) as { signingUrl: string };
+      await navigator.clipboard.writeText(signingUrl);
+      addToast("Signed link copied to clipboard (valid 72 hours)", "success");
     } catch {
-      addToast("Failed to copy signing link", "error");
+      addToast("Failed to generate signing link", "error");
     }
+  };
+
+  const handleCounterSign = () => {
+    setShowCounterSign(true);
+  };
+
+  const handleCounterSignSuccess = () => {
+    setShowCounterSign(false);
+    addToast("BAA counter-signed. Agreement is now fully executed.", "success");
+    onClose();
   };
 
   // Determine classes based on animation phase
@@ -559,6 +606,18 @@ export default function BAADetailsModal({
                 Copy Signing Link
               </Button>
             )}
+            {currentBaa.status === "pending_countersignature" && (
+              <Button
+                variant="outline"
+                onClick={handleCounterSign}
+                className="border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+              >
+                <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                </svg>
+                Counter-Sign (Clinic)
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -572,6 +631,15 @@ export default function BAADetailsModal({
           onClose={() => setPreviewPDF(false)}
         />
       )}
+
+      {/* Counter-Sign Modal */}
+      <CounterSignModal
+        baaId={currentBaa.id}
+        vendorName={currentVendor.name}
+        open={showCounterSign}
+        onClose={() => setShowCounterSign(false)}
+        onSuccess={handleCounterSignSuccess}
+      />
     </>
   );
 }

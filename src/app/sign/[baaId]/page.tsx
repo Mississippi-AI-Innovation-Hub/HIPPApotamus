@@ -1,13 +1,61 @@
 import { getBAAById, getVendorById, getClinic } from "@/lib/db";
 import { logger } from "@/lib/logger";
-import SigningInterface from "@/components/signing/SigningInterface";
+import { verifySigningToken } from "@/lib/signing/token";
+import SigningPageClient from "@/components/signing/SigningPageClient";
 
 interface SignPageProps {
   params: Promise<{ baaId: string }>;
+  searchParams: Promise<{ token?: string }>;
 }
 
-export default async function SignPage({ params }: SignPageProps) {
+function TokenErrorPage({ message }: { message: string }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="max-w-md rounded-xl bg-white p-8 text-center shadow-lg">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
+          <svg
+            className="h-7 w-7 text-red-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            />
+          </svg>
+        </div>
+        <h1 className="text-xl font-bold text-slate-900">
+          Access Denied
+        </h1>
+        <p className="mt-2 text-sm text-slate-500">
+          {message}
+        </p>
+        <p className="mt-4 text-xs text-slate-400">
+          If you believe this is an error, please contact your HIPAA compliance officer.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default async function SignPage({ params, searchParams }: SignPageProps) {
   const { baaId } = await params;
+  const { token } = await searchParams;
+
+  // ── Token verification ────────────────────────────────────────────────────
+  if (!token) {
+    logger.warn("Sign page: no token provided", { baaId });
+    return <TokenErrorPage message="No signing token provided. Please use the link from your invitation email." />;
+  }
+
+  const tokenResult = verifySigningToken(token);
+  if (!tokenResult || tokenResult.baaId !== baaId) {
+    logger.warn("Sign page: invalid or mismatched token", { baaId });
+    return <TokenErrorPage message="Invalid or expired signing link. Contact your compliance officer for a new invitation." />;
+  }
 
   try {
     const baa = await getBAAById(baaId);
@@ -130,20 +178,22 @@ export default async function SignPage({ params }: SignPageProps) {
     const clinic = await getClinic(baa.clinicId);
 
     return (
-      <div className="min-h-screen bg-slate-50">
-        <SigningInterface
-          baaId={baa.id}
-          vendorId={baa.vendorId}
-          vendorName={vendor?.name ?? "Vendor"}
-          clinicName={clinic?.name ?? "Mississippi DOH Clinic"}
-          contractType={baa.contractType}
-          effectiveDate={baa.effectiveDate}
-          expirationDate={baa.expirationDate}
-          templateVersion={baa.templateVersion}
-          termYears={baa.termYears}
-          requiresStateLawRetentionNotice={baa.requiresStateLawRetentionNotice}
-        />
-      </div>
+      <SigningPageClient
+        baaId={baa.id}
+        token={token}
+        vendorId={baa.vendorId}
+        vendorName={vendor?.name ?? "Vendor"}
+        authorizedSignerName={vendor?.contactName ?? ""}
+        authorizedSignerTitle={vendor?.authorizedSignerTitle ?? ""}
+        authorizedSignerEmail={vendor?.contactEmail ?? ""}
+        clinicName={clinic?.name ?? "Mississippi DOH Clinic"}
+        contractType={baa.contractType}
+        effectiveDate={baa.effectiveDate}
+        expirationDate={baa.expirationDate}
+        templateVersion={baa.templateVersion}
+        termYears={baa.termYears}
+        requiresStateLawRetentionNotice={baa.requiresStateLawRetentionNotice}
+      />
     );
   } catch (error) {
     logger.error("Sign page error", { baaId, error: String(error) });

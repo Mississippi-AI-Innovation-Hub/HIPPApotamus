@@ -32,6 +32,9 @@ const STATUS_DOT: Record<BAAStatus, string> = {
   expiring_soon: "bg-warning",
   expired: "bg-destructive",
   pending_signature: "bg-muted-foreground",
+  pending_countersignature: "bg-sky-500",
+  terminated: "bg-destructive",
+  declined: "bg-muted-foreground",
 };
 
 const STATUS_BAR_COLORS: Record<BAAStatus, string> = {
@@ -39,6 +42,9 @@ const STATUS_BAR_COLORS: Record<BAAStatus, string> = {
   expiring_soon: "#CA8A04",
   expired: "#DC2626",
   pending_signature: "#64748B",
+  pending_countersignature: "#0EA5E9",
+  terminated: "#991B1B",
+  declined: "#6B7280",
 };
 
 const STATUS_TEXT: Record<BAAStatus, string> = {
@@ -46,6 +52,9 @@ const STATUS_TEXT: Record<BAAStatus, string> = {
   expiring_soon: "Expiring Soon",
   expired: "Expired",
   pending_signature: "Pending Signature",
+  pending_countersignature: "Awaiting Counter-Sign",
+  terminated: "Terminated",
+  declined: "Declined",
 };
 
 function formatRelativeTime(dateStr: string): string {
@@ -76,7 +85,7 @@ export default function VendorList({ vendors, baas, onSelectVendor }: VendorList
     for (const vendor of vendors) {
       const vendorBaas = baas.filter((b) => b.vendorId === vendor.id);
       // Pick the most "relevant" BAA: active > expiring > pending > expired
-      const priority: BAAStatus[] = ["active", "expiring_soon", "pending_signature", "expired"];
+      const priority: BAAStatus[] = ["pending_countersignature", "active", "expiring_soon", "pending_signature", "expired", "terminated", "declined"];
       const sorted = vendorBaas.sort(
         (a, b) => priority.indexOf(a.status) - priority.indexOf(b.status)
       );

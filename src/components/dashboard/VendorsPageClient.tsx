@@ -33,16 +33,21 @@ export default function VendorsPageClient({
         const vendorBaas = baas.filter(
           (b) => b.vendorId === selectedVendor.id
         );
-        const priority = [
+        const priority: string[] = [
+          "pending_countersignature",
           "active",
           "expiring_soon",
           "pending_signature",
           "expired",
-        ] as const;
+          "terminated",
+          "declined",
+        ];
         const sorted = [...vendorBaas].sort(
-          (a, b) =>
-            priority.indexOf(a.status as (typeof priority)[number]) -
-            priority.indexOf(b.status as (typeof priority)[number])
+          (a, b) => {
+            const ai = priority.indexOf(a.status);
+            const bi = priority.indexOf(b.status);
+            return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+          }
         );
         return sorted[0] ?? null;
       })()

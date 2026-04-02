@@ -30,6 +30,8 @@ export async function generateContractPDF(
   baa: BAA,
   vendor: Vendor,
   clinic: Clinic,
+  signatureImage?: string,
+  counterSignatureImage?: string,
 ): Promise<Buffer> {
   try {
     const populatedContent = populateTemplate({
@@ -62,6 +64,8 @@ export async function generateContractPDF(
       vendor,
       clinic,
       populatedTemplate: populatedContent,
+      signatureImage,
+      counterSignatureImage,
     });
 
     const buffer = await renderToBuffer(asPdfElement(element));

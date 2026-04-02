@@ -4,7 +4,10 @@ export type BAAStatus =
   | "active"
   | "expiring_soon"
   | "expired"
-  | "pending_signature";
+  | "pending_signature"
+  | "pending_countersignature"
+  | "terminated"
+  | "declined";
 
 export type UserRole = "admin" | "vendor";
 
@@ -37,11 +40,15 @@ export type ContractType =
 export interface SigningCertificate {
   signerName: string;
   signerEmail: string;
+  signerTitle: string;
+  signerOrganization: string;
   ipAddress: string | null;
   userAgent: string | null;
   timestamp: string;
   consentGrantedAt: string;
+  documentPresentedAt: string;
   method: 'drawn_signature' | 'typed_name' | 'click_to_accept';
+  finalDocumentHash: string;
 }
 
 export interface SignedSnapshot {
@@ -65,9 +72,12 @@ export interface Vendor {
   name: string;
   type: VendorType;
   contractType: ContractType;
+  /** Full name of the Authorized Representative designated to sign on behalf of this vendor. */
   contactName: string;
   contactEmail: string;
   contactPhone: string;
+  /** Job title of the Authorized Representative (e.g., "Chief Privacy Officer"). */
+  authorizedSignerTitle: string;
   address: string;
   /** Whether this vendor requires subcontractor chain compliance documentation. */
   requiresSubcontractorCompliance: boolean;
@@ -122,6 +132,20 @@ export interface BAA {
   parentBaaId: string | null;
   /** Type of this document version. */
   versionType: 'original' | 'amendment' | 'renewal' | 'extension';
+  /** SHA-256 hash of the signed PDF document. */
+  signedDocumentHash: string | null;
+  /** Counter-signature by the covered entity (clinic). */
+  counterSignedDate: string | null;
+  counterSignedBy: string | null;
+  counterSignerTitle: string | null;
+  /** Date the BAA was terminated, if applicable. */
+  terminationDate: string | null;
+  /** Reason for termination. */
+  terminationReason: 'breach' | 'mutual' | 'vendor_closure' | 'regulatory' | 'other' | null;
+  /** Notes about the termination. */
+  terminationNotes: string | null;
+  /** Who terminated the BAA. */
+  terminatedBy: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -194,11 +218,16 @@ export interface VendorSeedRecord {
     | "signedBy"
     | "documentUrl"
     | "signedDocumentUrl"
+    | "signedDocumentHash"
     | "signingCertificate"
     | "signedSnapshot"
     | "documentVersion"
     | "parentBaaId"
     | "versionType"
+    | "terminationDate"
+    | "terminationReason"
+    | "terminationNotes"
+    | "terminatedBy"
     | "createdAt"
     | "updatedAt"
   >;

@@ -104,9 +104,10 @@ The "Signing Ceremony" is the complete workflow from document presentation to si
                                              │
                               ┌──────────────▼──────────────┐
                               │  5. IDENTITY CONFIRMATION    │
-                              │  Signer full name            │
-                              │  Signer job title            │
-                              │  Signer email                │
+                              │  Authorized Representative   │
+                              │  (pre-filled from vendor     │
+                              │   record — read-only)        │
+                              │  Name, Title, Email shown    │
                               │  Log: IDENTITY_CONFIRMED     │
                               └──────────────┬──────────────┘
                                              │

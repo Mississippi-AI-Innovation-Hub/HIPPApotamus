@@ -127,14 +127,17 @@ export function coordinatorAgentPrompt(
 ): string {
   const clinicName = clinic?.name ?? "Mississippi DOH Clinic";
 
-  const statusCounts = {
+  const statusCounts: Record<string, number> = {
     active: 0,
     expiring_soon: 0,
     expired: 0,
     pending_signature: 0,
+    pending_countersignature: 0,
+    terminated: 0,
+    declined: 0,
   };
   for (const baa of allBAAs) {
-    statusCounts[baa.status]++;
+    statusCounts[baa.status] = (statusCounts[baa.status] ?? 0) + 1;
   }
 
   const vendorSummary =
@@ -165,6 +168,7 @@ PORTFOLIO SUMMARY:
 - Expiring Soon: ${statusCounts.expiring_soon}
 - Expired: ${statusCounts.expired}
 - Pending Signature: ${statusCounts.pending_signature}
+- Awaiting Counter-Signature: ${statusCounts.pending_countersignature}
 
 REGISTERED VENDORS (${vendors.length}):
 ${vendorSummary}

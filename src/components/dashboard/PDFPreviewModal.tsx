@@ -28,12 +28,27 @@ export default function PDFPreviewModal({ baaId, vendorName, signedDocumentUrl, 
 
     fetch(apiUrl)
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to generate PDF");
+        if (!res.ok) {
+          // Check if it's a tamper alert
+          if (res.status === 409) {
+            return res.json().then((data: { error?: string }) => {
+              throw new Error(data.error ?? "Document integrity check failed");
+            });
+          }
+          throw new Error("Failed to load PDF");
+        }
+        // Log whether we got the stored version or regenerated
+        const integrityVerified = res.headers.get("X-Integrity-Verified");
+        if (integrityVerified === "true") {
+          console.log("Serving stored signed PDF — integrity verified");
+        }
         return res.blob();
       })
       .then((blob) => {
-        const url = URL.createObjectURL(blob);
-        setPdfUrl(url);
+        if (blob instanceof Blob) {
+          const url = URL.createObjectURL(blob);
+          setPdfUrl(url);
+        }
         setLoading(false);
       })
       .catch(() => {
@@ -113,7 +128,9 @@ export default function PDFPreviewModal({ baaId, vendorName, signedDocumentUrl, 
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              <p className="text-sm font-medium text-muted-foreground">Generating PDF...</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                {signedDocumentUrl ? "Loading signed document..." : "Generating PDF..."}
+              </p>
             </div>
           )}
 

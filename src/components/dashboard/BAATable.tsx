@@ -89,6 +89,27 @@ const STATUS_CONFIG: Record<BAAStatus, { label: string; bg: string; text: string
     dot: "#1D4ED8",
     border: "#1D4ED8",
   },
+  pending_countersignature: {
+    label: "Awaiting Counter-Signature",
+    bg: "#F0F9FF",
+    text: "#0369A1",
+    dot: "#0EA5E9",
+    border: "#0EA5E9",
+  },
+  terminated: {
+    label: "Terminated",
+    bg: "#FEF2F2",
+    text: "#991B1B",
+    dot: "#991B1B",
+    border: "#991B1B",
+  },
+  declined: {
+    label: "Declined",
+    bg: "#F3F4F6",
+    text: "#6B7280",
+    dot: "#6B7280",
+    border: "#6B7280",
+  },
 };
 
 function StatusBadge({ status }: { status: BAAStatus }) {
@@ -115,6 +136,7 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "expiring_soon", label: "Expiring Soon" },
   { key: "expired", label: "Expired" },
   { key: "pending_signature", label: "Pending Signature" },
+  { key: "pending_countersignature", label: "Awaiting Counter-Sign" },
 ];
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -279,7 +301,7 @@ export default function BAATable({ baas, vendors, onSelectBAA }: BAATableProps) 
 // ─── Days Indicator ─────────────────────────────────────────────────────────
 
 function DaysIndicator({ days, status }: { days: number; status: BAAStatus }) {
-  if (status === "pending_signature") {
+  if (status === "pending_signature" || status === "pending_countersignature" || status === "declined" || status === "terminated") {
     return <span className="text-[15px] text-muted-foreground">--</span>;
   }
 

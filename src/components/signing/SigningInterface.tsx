@@ -20,6 +20,12 @@ interface SigningInterfaceProps {
   baaId: string;
   vendorId: string;
   vendorName: string;
+  /** Authorized Representative designated by the clinic when creating the vendor. */
+  authorizedSignerName: string;
+  /** Job title of the Authorized Representative. */
+  authorizedSignerTitle: string;
+  /** Email of the Authorized Representative (verified via OTP). */
+  authorizedSignerEmail: string;
   clinicName: string;
   contractType: ContractType;
   effectiveDate: string;
@@ -49,6 +55,9 @@ export default function SigningInterface({
   baaId,
   vendorId,
   vendorName,
+  authorizedSignerName,
+  authorizedSignerTitle,
+  authorizedSignerEmail,
   clinicName,
   contractType,
   effectiveDate,
@@ -61,8 +70,19 @@ export default function SigningInterface({
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSignature, setHasSignature] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  // Authorized Representative info — pre-filled from vendor record, not editable
+  const signerName = authorizedSignerName;
+  const signerTitle = authorizedSignerTitle;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
+  const [showDeclineModal, setShowDeclineModal] = useState(false);
+  const [declineReason, setDeclineReason] = useState("not_authorized");
+  const [declineNotes, setDeclineNotes] = useState("");
+  const [isDeclining, setIsDeclining] = useState(false);
+  const [declineResult, setDeclineResult] = useState<{
     success: boolean;
     message: string;
   } | null>(null);
@@ -75,11 +95,12 @@ export default function SigningInterface({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Set canvas internal dimensions to match display
+    // Force 2x resolution regardless of device for consistent signature quality
+    const SIGNATURE_SCALE = 2;
     const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * window.devicePixelRatio;
-    canvas.height = rect.height * window.devicePixelRatio;
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    canvas.width = rect.width * SIGNATURE_SCALE;
+    canvas.height = rect.height * SIGNATURE_SCALE;
+    ctx.scale(SIGNATURE_SCALE, SIGNATURE_SCALE);
 
     // Drawing style
     ctx.strokeStyle = "#1e293b";
@@ -177,7 +198,8 @@ export default function SigningInterface({
         body: JSON.stringify({
           signature: signatureBase64,
           vendorId,
-          signerName: vendorName,
+          signerName: signerName.trim(),
+          signerTitle: signerTitle.trim(),
         }),
       });
 
@@ -204,7 +226,46 @@ export default function SigningInterface({
     } finally {
       setIsSubmitting(false);
     }
-  }, [hasSignature, agreedToTerms, baaId, vendorId]);
+  }, [hasSignature, agreedToTerms, signerName, signerTitle, baaId, vendorId, authorizedSignerEmail]);
+
+  const handleDecline = useCallback(async () => {
+    setIsDeclining(true);
+    setDeclineResult(null);
+    try {
+      const response = await fetch(`/api/baas/${baaId}/decline`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vendorId,
+          reason: declineReason,
+          notes: declineNotes.trim(),
+        }),
+      });
+
+      if (response.ok) {
+        setDeclineResult({
+          success: true,
+          message: "You have declined to sign this agreement. The compliance officer has been notified.",
+        });
+        setShowDeclineModal(false);
+      } else {
+        const errorData = (await response.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        setDeclineResult({
+          success: false,
+          message: errorData.error ?? "Failed to submit decline. Please try again.",
+        });
+      }
+    } catch {
+      setDeclineResult({
+        success: false,
+        message: "Network error. Please check your connection and try again.",
+      });
+    } finally {
+      setIsDeclining(false);
+    }
+  }, [baaId, vendorId, declineReason, declineNotes]);
 
   const formattedEffective = new Date(effectiveDate).toLocaleDateString(
     "en-US",
@@ -408,7 +469,7 @@ export default function SigningInterface({
         {/* Signature area */}
         <Card className="rounded-none border-0 shadow-none ring-0">
           <CardContent className="px-4 py-4">
-            {submitResult?.success ? (
+            {submitResult?.success || declineResult?.success ? (
               <div className="rounded-xl bg-primary/10 p-6 text-center">
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15">
                   <svg
@@ -426,7 +487,7 @@ export default function SigningInterface({
                   </svg>
                 </div>
                 <p className="font-medium text-primary">
-                  {submitResult.message}
+                  {submitResult?.message ?? declineResult?.message}
                 </p>
               </div>
             ) : (
@@ -437,6 +498,21 @@ export default function SigningInterface({
                 >
                   Sign below
                 </h3>
+
+                {/* Authorized Representative — read-only, set when vendor was created */}
+                <div className="mb-5 rounded-lg border border-border bg-slate-50 p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">
+                    Authorized Representative
+                  </p>
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-foreground">{signerName}</p>
+                    <p className="text-sm text-muted-foreground">{signerTitle}</p>
+                    <p className="text-xs text-muted-foreground">{authorizedSignerEmail}</p>
+                  </div>
+                  <p className="mt-2 text-[11px] text-muted-foreground/70">
+                    This information was designated by the covered entity. If this is incorrect, contact your compliance officer.
+                  </p>
+                </div>
 
                 {/* Canvas */}
                 <div className="relative rounded-lg border border-border bg-background">
@@ -492,6 +568,11 @@ export default function SigningInterface({
                     {submitResult.message}
                   </div>
                 )}
+                {declineResult && !declineResult.success && (
+                  <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-2 text-sm text-destructive">
+                    {declineResult.message}
+                  </div>
+                )}
 
                 {/* Sign button */}
                 <Button
@@ -527,6 +608,78 @@ export default function SigningInterface({
                     "Sign Agreement"
                   )}
                 </Button>
+
+                {/* Decline to Sign */}
+                <button
+                  onClick={() => setShowDeclineModal(true)}
+                  className="mt-2 w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  I decline to sign electronically
+                </button>
+
+                {/* Decline Modal */}
+                {showDeclineModal && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                    <div className="mx-4 w-full max-w-md rounded-xl bg-background p-6 shadow-xl">
+                      <h3 className="text-lg font-semibold text-foreground mb-4">
+                        Decline to Sign
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Please let us know why you are declining to sign this agreement.
+                        The compliance officer will be notified.
+                      </p>
+
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-foreground mb-1">
+                          Reason
+                        </label>
+                        <select
+                          value={declineReason}
+                          onChange={(e) => setDeclineReason(e.target.value)}
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                        >
+                          <option value="not_authorized">I am not authorized to sign</option>
+                          <option value="need_review">Agreement needs legal review</option>
+                          <option value="terms_disagreement">I disagree with the terms</option>
+                          <option value="wrong_entity">Wrong vendor or entity</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-foreground mb-1">
+                          Additional Notes (optional)
+                        </label>
+                        <textarea
+                          value={declineNotes}
+                          onChange={(e) => setDeclineNotes(e.target.value)}
+                          placeholder="Provide any additional details..."
+                          rows={3}
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none"
+                        />
+                      </div>
+
+                      <div className="flex gap-3">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowDeclineModal(false)}
+                          className="flex-1"
+                          disabled={isDeclining}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={handleDecline}
+                          className="flex-1"
+                          disabled={isDeclining}
+                        >
+                          {isDeclining ? "Submitting..." : "Confirm Decline"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </CardContent>

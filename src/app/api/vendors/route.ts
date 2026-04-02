@@ -8,6 +8,7 @@ import {
 } from "@/lib/db";
 import { sendEmail } from "@/lib/email/sender";
 import { baaInvitationEmail } from "@/lib/email/templates";
+import { generateSigningToken } from "@/lib/signing/token";
 import { logger } from "@/lib/logger";
 import type { Vendor, BAA, ContractType, VendorType, BAAStatus } from "@/types";
 
@@ -36,6 +37,7 @@ interface CreateVendorBody {
   contactName: string;
   contactEmail: string;
   contactPhone: string;
+  authorizedSignerTitle: string;
   address: string;
   requiresSubcontractorCompliance?: boolean;
   requiresSoc2Report?: boolean;
@@ -71,6 +73,7 @@ export async function POST(request: NextRequest) {
         contactName: body.contactName,
         contactEmail: body.contactEmail,
         contactPhone: body.contactPhone ?? "",
+        authorizedSignerTitle: body.authorizedSignerTitle ?? "",
         address: body.address ?? "",
         requiresSubcontractorCompliance:
           body.requiresSubcontractorCompliance ?? false,
@@ -106,11 +109,19 @@ export async function POST(request: NextRequest) {
       signedBy: null,
       documentUrl: null,
       signedDocumentUrl: null,
+      signedDocumentHash: null,
       signingCertificate: null,
       signedSnapshot: null,
       documentVersion: 1,
       parentBaaId: null,
       versionType: "original",
+      terminationDate: null,
+      terminationReason: null,
+      terminationNotes: null,
+      terminatedBy: null,
+      counterSignedDate: null,
+      counterSignedBy: null,
+      counterSignerTitle: null,
       templateVersion: body.templateVersion ?? "v1.0.0",
       termYears,
       requiresStateLawRetentionNotice:
@@ -130,14 +141,15 @@ export async function POST(request: NextRequest) {
       ipAddress: request.headers.get("x-forwarded-for"),
     });
 
-    // Send invitation email
+    // Send invitation email with signed token
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const signingToken = generateSigningToken(baa.id, vendor.id);
     const emailContent = baaInvitationEmail({
       vendorName: vendor.name,
       contactName: vendor.contactName,
       clinicName: "Mississippi DOH Central Region",
       baaId: baa.id,
-      signingUrl: `${baseUrl}/sign/${baa.id}`,
+      signingUrl: `${baseUrl}/sign/${baa.id}?token=${signingToken}`,
       expirationDate,
     });
 

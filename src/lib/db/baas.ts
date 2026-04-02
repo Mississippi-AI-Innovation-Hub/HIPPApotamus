@@ -59,6 +59,9 @@ export async function getBAAs(clinicId: string): Promise<BAA[]> {
       "expiring_soon",
       "expired",
       "pending_signature",
+      "pending_countersignature",
+      "terminated",
+      "declined",
     ];
     const otherResults = await Promise.all(
       statuses.map((status) =>
@@ -374,7 +377,7 @@ export async function signBAA(
   try {
     const now = new Date().toISOString();
     return await updateBAA(id, {
-      status: "active",
+      status: "pending_countersignature",
       signedDate: now,
       signedBy,
       ...(extra?.signedDocumentUrl !== undefined && { signedDocumentUrl: extra.signedDocumentUrl }),

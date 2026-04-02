@@ -29,6 +29,7 @@ interface VendorFormData {
   contactName: string;
   contactEmail: string;
   contactPhone: string;
+  authorizedSignerTitle: string;
   address: string;
 }
 
@@ -65,6 +66,7 @@ const INITIAL_VENDOR: VendorFormData = {
   contactName: "",
   contactEmail: "",
   contactPhone: "",
+  authorizedSignerTitle: "",
   address: "",
 };
 
@@ -137,6 +139,7 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
           contactName: vendor.contactName,
           contactEmail: vendor.contactEmail,
           contactPhone: vendor.contactPhone,
+          authorizedSignerTitle: vendor.authorizedSignerTitle,
           address: vendor.address,
           contractType: contract.contractType,
           effectiveDate: contract.effectiveDate,
@@ -206,16 +209,34 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
                 </select>
               </FormField>
 
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground pt-1">
+                Authorized Representative
+              </p>
+              <p className="text-[11px] text-muted-foreground -mt-1 mb-1">
+                The person designated to sign BAAs on behalf of this vendor.
+              </p>
+
               <div className="grid grid-cols-2 gap-4">
-                <FormField label="Contact Name" required>
+                <FormField label="Full Name" required>
                   <Input
                     type="text"
                     value={vendor.contactName}
                     onChange={(e) => setVendor({ ...vendor, contactName: e.target.value })}
-                    placeholder="Jane Smith"
+                    placeholder="Jennifer Walsh"
                   />
                 </FormField>
 
+                <FormField label="Job Title" required>
+                  <Input
+                    type="text"
+                    value={vendor.authorizedSignerTitle}
+                    onChange={(e) => setVendor({ ...vendor, authorizedSignerTitle: e.target.value })}
+                    placeholder="Chief Privacy Officer"
+                  />
+                </FormField>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <FormField label="Email" required>
                   <Input
                     type="email"
@@ -224,9 +245,7 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
                     placeholder="jane@vendor.com"
                   />
                 </FormField>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
                 <FormField label="Phone">
                   <Input
                     type="tel"
@@ -235,16 +254,16 @@ export default function AddVendorModal({ open, onClose, onSuccess }: AddVendorMo
                     placeholder="(601) 555-0123"
                   />
                 </FormField>
-
-                <FormField label="Address">
-                  <Input
-                    type="text"
-                    value={vendor.address}
-                    onChange={(e) => setVendor({ ...vendor, address: e.target.value })}
-                    placeholder="123 Health St, Jackson MS"
-                  />
-                </FormField>
               </div>
+
+              <FormField label="Address">
+                <Input
+                  type="text"
+                  value={vendor.address}
+                  onChange={(e) => setVendor({ ...vendor, address: e.target.value })}
+                  placeholder="123 Health St, Jackson MS"
+                />
+              </FormField>
             </div>
           ) : (
             <div className="space-y-4">

@@ -1,5 +1,5 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import { pdfColors, pdfTypography, pdfLayout } from "./styles";
 import type { BAA, Vendor, Clinic } from "@/types";
 
@@ -91,6 +91,8 @@ interface BaaContractPDFProps {
   vendor: Vendor;
   clinic: Clinic;
   populatedTemplate: string;
+  signatureImage?: string;
+  counterSignatureImage?: string;
 }
 
 /**
@@ -101,6 +103,8 @@ export function BaaContractPDF({
   vendor,
   clinic,
   populatedTemplate,
+  signatureImage,
+  counterSignatureImage,
 }: BaaContractPDFProps) {
   const sections = populatedTemplate
     .split(/\n## /)
@@ -190,16 +194,27 @@ export function BaaContractPDF({
             <Text style={{ ...pdfTypography.body, fontWeight: "bold" }}>
               {clinic.name}
             </Text>
-            {baa.signedDate ? (
+            {baa.counterSignedDate && baa.counterSignedBy ? (
               <>
-                <Text style={{ ...pdfTypography.body, marginTop: 8, fontStyle: "italic" }}>
-                  Electronically signed
+                {counterSignatureImage && (
+                  <View style={{ width: 200, height: 60, overflow: "hidden", marginTop: 8 }}>
+                    <Image
+                      src={counterSignatureImage}
+                      style={{ width: 200, height: 60, objectFit: "contain", objectPosition: "left center" }}
+                    />
+                  </View>
+                )}
+                <Text style={{ ...pdfTypography.body, marginTop: counterSignatureImage ? 4 : 8, fontStyle: "italic" }}>
+                  Electronically signed by {baa.counterSignedBy}
                 </Text>
                 <Text style={styles.signatureLabel}>
-                  Name: {clinic.hipaaOfficer}
+                  Name: {baa.counterSignedBy}
                 </Text>
                 <Text style={styles.signatureLabel}>
-                  Date: {new Date(baa.signedDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                  Title: {baa.counterSignerTitle ?? "HIPAA Privacy Officer"}
+                </Text>
+                <Text style={styles.signatureLabel}>
+                  Date: {new Date(baa.counterSignedDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
                 </Text>
               </>
             ) : (
@@ -220,12 +235,25 @@ export function BaaContractPDF({
             </Text>
             {baa.signedDate && baa.signedBy ? (
               <>
-                <Text style={{ ...pdfTypography.body, marginTop: 8, fontStyle: "italic" }}>
+                {signatureImage && (
+                  <View style={{ width: 200, height: 60, overflow: "hidden", marginTop: 8 }}>
+                    <Image
+                      src={signatureImage}
+                      style={{ width: 200, height: 60, objectFit: "contain", objectPosition: "left center" }}
+                    />
+                  </View>
+                )}
+                <Text style={{ ...pdfTypography.body, marginTop: signatureImage ? 4 : 8, fontStyle: "italic" }}>
                   Electronically signed by {baa.signedBy}
                 </Text>
                 <Text style={styles.signatureLabel}>
                   Name: {baa.signedBy}
                 </Text>
+                {baa.signingCertificate?.signerTitle && (
+                  <Text style={styles.signatureLabel}>
+                    Title: {baa.signingCertificate.signerTitle}
+                  </Text>
+                )}
                 <Text style={styles.signatureLabel}>
                   Date: {new Date(baa.signedDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
                 </Text>

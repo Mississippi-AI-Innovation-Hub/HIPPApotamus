@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
 import { getRequiredSession } from "@/lib/auth/session";
 import { getBAAById, getVendorById, getClinic, addAuditLog } from "@/lib/db";
 import { generateContractPDF, generateAuditPacket } from "@/lib/pdf/generator";
@@ -48,18 +49,60 @@ export async function GET(
     }
 
     // ── Serve stored signed PDF if requested and available ───────────────────
+    // Signed documents are immutable — serve the exact stored copy with integrity check.
     if (stored && baa.signedDocumentUrl) {
+      logger.info("Attempting to serve stored signed PDF", { baaId, key: baa.signedDocumentUrl, hash: baa.signedDocumentHash });
       try {
         const storedPdf = await getObjectFromS3(baa.signedDocumentUrl);
         if (storedPdf) {
-          logger.info("Serving stored signed PDF from S3", { baaId, key: baa.signedDocumentUrl });
+          // ── SHA-256 Integrity Verification ──────────────────────────────
+          // Re-compute the hash and compare against the stored hash.
+          // If they don't match, the document has been tampered with.
+          if (baa.signedDocumentHash) {
+            const computedHash = crypto.createHash("sha256").update(Buffer.from(storedPdf)).digest("hex");
+            if (computedHash !== baa.signedDocumentHash) {
+              logger.error("SECURITY ALERT: Document integrity check FAILED — possible tampering", {
+                baaId,
+                expectedHash: baa.signedDocumentHash,
+                computedHash,
+                key: baa.signedDocumentUrl,
+              });
+
+              await addAuditLog({
+                baaId,
+                vendorId: baa.vendorId,
+                action: "INTEGRITY_CHECK_FAILED",
+                performedBy: session.name ?? session.email,
+                details: {
+                  message: "Document hash mismatch — possible tampering",
+                  expectedHash: baa.signedDocumentHash,
+                  computedHash,
+                },
+                ipAddress: request.headers.get("x-forwarded-for"),
+              });
+
+              return NextResponse.json(
+                {
+                  error: "Security Alert: Document integrity verification failed. The stored document may have been tampered with. This incident has been logged.",
+                  code: "INTEGRITY_CHECK_FAILED",
+                },
+                { status: 409 },
+              );
+            }
+
+            logger.info("Document integrity check passed", { baaId });
+          }
 
           await addAuditLog({
             baaId,
             vendorId: baa.vendorId,
-            action: "Stored signed PDF served",
+            action: "DOCUMENT_VIEWED",
             performedBy: session.name ?? session.email,
-            details: { key: baa.signedDocumentUrl },
+            details: {
+              source: "s3_stored",
+              key: baa.signedDocumentUrl,
+              integrityVerified: !!baa.signedDocumentHash,
+            },
             ipAddress: request.headers.get("x-forwarded-for"),
           });
 
@@ -67,6 +110,8 @@ export async function GET(
             headers: {
               "Content-Type": "application/pdf",
               "Content-Disposition": `inline; filename="BAA_${baaId}_signed.pdf"`,
+              "X-Document-Hash": baa.signedDocumentHash ?? "not-available",
+              "X-Integrity-Verified": baa.signedDocumentHash ? "true" : "no-hash-stored",
             },
           });
         }
@@ -80,13 +125,22 @@ export async function GET(
       }
     }
 
+    // If we get here for a signed BAA, S3 fetch failed — log prominently
+    if (baa.signedDate && stored) {
+      logger.warn("FALLBACK: Regenerating PDF for a SIGNED BAA — S3 stored copy unavailable", {
+        baaId,
+        signedDocumentUrl: baa.signedDocumentUrl,
+        signedDocumentHash: baa.signedDocumentHash,
+      });
+    }
+
     // Audit log
     await addAuditLog({
       baaId,
       vendorId: baa.vendorId,
-      action: `PDF ${format} generated`,
+      action: baa.signedDate ? `PDF regenerated (S3 fallback)` : `PDF ${format} generated`,
       performedBy: session.name ?? session.email,
-      details: { format, upload },
+      details: { format, upload, storedAttempted: stored, signedDocumentUrl: baa.signedDocumentUrl },
       ipAddress: request.headers.get("x-forwarded-for"),
     });
 

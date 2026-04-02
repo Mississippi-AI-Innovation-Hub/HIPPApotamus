@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "node:crypto";
 import { getRequiredSession } from "@/lib/auth/session";
 import { getBAAById, signBAA, addAuditLog, getVendorById, getClinic } from "@/lib/db";
 import { sendEmail } from "@/lib/email/sender";
@@ -20,7 +21,7 @@ export async function POST(
     const { id } = await context.params;
 
     // Parse request body for signer info
-    let body: { signature?: string; vendorId?: string; signerName?: string } = {};
+    let body: { signature?: string; vendorId?: string; signerName?: string; signerTitle?: string } = {};
     try {
       body = await request.json();
     } catch {
@@ -53,9 +54,10 @@ export async function POST(
       );
     }
 
-    // Determine who is signing: use vendor contact name if signing from public page
+    // Determine who is signing: use Authorized Representative from vendor record
     const vendor = await getVendorById(existing.vendorId);
-    const signerName = body.signerName ?? vendor?.contactName ?? sessionName;
+    const signerName = vendor?.contactName ?? body.signerName ?? sessionName;
+    const signerTitle = vendor?.authorizedSignerTitle ?? "";
 
     // Fetch clinic data for PDF generation and snapshot
     const clinic = await getClinic(existing.clinicId);
@@ -64,11 +66,15 @@ export async function POST(
     const signingCertificate: SigningCertificate = {
       signerName,
       signerEmail: vendor?.contactEmail ?? "",
+      signerTitle,
+      signerOrganization: vendor?.name ?? "",
       ipAddress: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? null,
       userAgent: request.headers.get("user-agent") ?? null,
       timestamp: new Date().toISOString(),
       consentGrantedAt: new Date().toISOString(),
+      documentPresentedAt: new Date().toISOString(),
       method: body.signature ? "drawn_signature" : "click_to_accept",
+      finalDocumentHash: "", // Will be updated after PDF generation
     };
 
     const signedSnapshot: SignedSnapshot | null = vendor && clinic ? {
@@ -118,21 +124,36 @@ export async function POST(
 
       // 2. Generate the signed PDF using the UPDATED baa (with signedDate/signedBy)
       if (vendor && clinic) {
-        const pdfBuffer = await generateContractPDF(baa, vendor, clinic);
+        // Pass the drawn signature image (base64) to embed in the PDF
+        const signatureBase64 = body.signature ?? undefined;
+        const pdfBuffer = await generateContractPDF(baa, vendor, clinic, signatureBase64);
+
+        // Compute SHA-256 hash of the final PDF document
+        const documentHash = crypto.createHash("sha256").update(pdfBuffer).digest("hex");
+        logger.info("Document hash computed", { baaId: id, hash: documentHash });
+
         const documentVersion = baa.documentVersion ?? 1;
         const pdfKey = `signed-documents/${id}-v${documentVersion}.pdf`;
         await uploadToS3({
           key: pdfKey,
           body: pdfBuffer,
           contentType: "application/pdf",
-          metadata: { baaId: id, vendorId: baa.vendorId, version: String(documentVersion) },
+          metadata: { baaId: id, vendorId: baa.vendorId, version: String(documentVersion), sha256: documentHash },
         });
         signedDocumentUrl = pdfKey;
         logger.info("Signed PDF uploaded to S3", { baaId: id, key: pdfKey });
 
-        // Update the BAA with the S3 key
+        // Update the BAA with the S3 key, document hash, and updated signing certificate
         const { updateBAA } = await import("@/lib/db");
-        await updateBAA(id, { signedDocumentUrl: pdfKey });
+        const updatedCertificate: SigningCertificate = {
+          ...signingCertificate,
+          finalDocumentHash: documentHash,
+        };
+        await updateBAA(id, {
+          signedDocumentUrl: pdfKey,
+          signedDocumentHash: documentHash,
+          signingCertificate: updatedCertificate,
+        });
       }
     } catch (pdfError) {
       logger.warn("Failed to generate/upload signed PDF — signing succeeded but PDF not stored", {
@@ -173,21 +194,41 @@ export async function POST(
         ...confirmationContent,
       });
 
-      // Notify admin
-      const adminContent = adminNotificationEmail({
-        vendorName: vendor.name,
-        clinicName: "Central Mississippi Health District",
-        baaId: id,
-        action: "BAA Signed",
-        performedBy: signerName,
-        timestamp: new Date().toISOString(),
-      });
+      // Notify clinic admin — counter-signature required
+      const clinicData = await getClinic(existing.clinicId);
+      const clinicEmail = clinicData?.contactEmail ?? process.env.ADMIN_EMAIL ?? "bipuladk60@gmail.com";
+      const baseUrlForAdmin = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-      const adminEmail =
-        process.env.ADMIN_EMAIL ?? "admin@msdoh.ms.gov";
       await sendEmail({
-        to: adminEmail,
-        ...adminContent,
+        to: clinicEmail,
+        subject: `Action Required: Counter-sign BAA for ${vendor.name}`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px;">
+            <h2 style="color: #0F172A; font-size: 20px; margin-bottom: 8px;">Counter-Signature Required</h2>
+            <p style="color: #475569; font-size: 14px; margin-bottom: 16px;">
+              <strong>${signerName}</strong> (${signerTitle}) from <strong>${vendor.name}</strong> has signed the Business Associate Agreement.
+            </p>
+            <p style="color: #475569; font-size: 14px; margin-bottom: 24px;">
+              The agreement requires your counter-signature to become fully executed.
+            </p>
+            <div style="background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+              <p style="color: #0369A1; font-size: 13px; margin: 0;">
+                <strong>Status:</strong> Awaiting Counter-Signature<br/>
+                <strong>Vendor:</strong> ${vendor.name}<br/>
+                <strong>Signed by:</strong> ${signerName}, ${signerTitle}<br/>
+                <strong>BAA ID:</strong> ${id}
+              </p>
+            </div>
+            <a href="${baseUrlForAdmin}/dashboard"
+               style="display: inline-block; background: #0F766E; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+              Open Dashboard to Counter-Sign
+            </a>
+            <p style="color: #94A3B8; font-size: 12px; margin-top: 24px;">
+              Log in to the HIPAApotamus dashboard, open this contract, and click "Counter-Sign (Clinic)" to complete the agreement.
+            </p>
+          </div>
+        `,
+        text: `Counter-Signature Required\n\n${signerName} (${signerTitle}) from ${vendor.name} has signed the BAA.\n\nLog in to the dashboard to counter-sign: ${baseUrlForAdmin}/dashboard`,
       });
     }
 
