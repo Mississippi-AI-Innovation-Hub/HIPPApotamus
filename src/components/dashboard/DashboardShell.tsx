@@ -107,6 +107,12 @@ export default function DashboardShell({
     return { totalVendors, activeBAAs, expiringSoon, expired };
   }, [vendors, baas]);
 
+  // BAAs awaiting the admin's counter-signature
+  const awaitingCounterSign = useMemo(
+    () => baas.filter((b) => b.status === "pending_countersignature"),
+    [baas],
+  );
+
   // Selected vendor for the detail modal
   const selectedVendor = useMemo(() => {
     if (!selectedBAA) return null;
@@ -178,6 +184,37 @@ export default function DashboardShell({
               </Button>
             </div>
           </div>
+
+          {/* Counter-signature alert */}
+          {awaitingCounterSign.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedBAA(awaitingCounterSign[0])}
+              className="group flex w-full items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-left transition-colors hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-700">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+              </span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-amber-900">
+                  {awaitingCounterSign.length === 1
+                    ? "1 contract needs your counter-signature"
+                    : `${awaitingCounterSign.length} contracts need your counter-signature`}
+                </p>
+                <p className="text-xs text-amber-800/80">
+                  The vendor has signed. Counter-sign to fully execute the agreement.
+                </p>
+              </div>
+              <span className="hidden items-center gap-1 text-xs font-semibold text-amber-900 group-hover:inline-flex">
+                {awaitingCounterSign.length === 1 ? "Open" : "Open first"}
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+              </span>
+            </button>
+          )}
 
           {/* Stats */}
           <StatsRow
