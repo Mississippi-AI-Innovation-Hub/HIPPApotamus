@@ -5,6 +5,7 @@ import { getBAAById, getVendorById, getClinic, updateBAA, addAuditLog } from "@/
 import { uploadToS3 } from "@/lib/storage/s3";
 import { generateContractPDF } from "@/lib/pdf/generator";
 import { logger } from "@/lib/logger";
+import { kmsSignDocumentHash } from "@/lib/signing/kms";
 import type { SigningCertificate } from "@/types";
 
 /**
@@ -91,6 +92,23 @@ export async function POST(
 
         signedDocumentHash = crypto.createHash("sha256").update(pdfBuffer).digest("hex");
 
+        // KMS digital signature for the fully executed document
+        let kmsSignature: string | null = null;
+        let kmsKeyArn: string | null = null;
+        try {
+          const kmsResult = await kmsSignDocumentHash(signedDocumentHash);
+          if (kmsResult) {
+            kmsSignature = kmsResult.signature;
+            kmsKeyArn = kmsResult.keyArn;
+            logger.info("KMS digital signature applied to counter-signed document", { baaId: id, keyArn: kmsKeyArn });
+          }
+        } catch (kmsErr) {
+          logger.warn("KMS signing failed for counter-signed document", {
+            baaId: id,
+            error: kmsErr instanceof Error ? kmsErr.message : String(kmsErr),
+          });
+        }
+
         const documentVersion = baa.documentVersion ?? 1;
         const pdfKey = `signed-documents/${id}-v${documentVersion}-countersigned.pdf`;
         await uploadToS3({
@@ -103,6 +121,8 @@ export async function POST(
         await updateBAA(id, {
           signedDocumentUrl: pdfKey,
           signedDocumentHash,
+          kmsSignature,
+          kmsKeyArn,
         });
 
         logger.info("Counter-signed PDF uploaded", { baaId: id, key: pdfKey });

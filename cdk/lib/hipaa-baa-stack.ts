@@ -12,12 +12,14 @@ import * as s3 from "aws-cdk-lib/aws-s3";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as kms from "aws-cdk-lib/aws-kms";
 
 export class HipaaBaaStack extends Stack {
   public readonly table: dynamodb.TableV2;
   public readonly bucket: s3.Bucket;
   public readonly userPool: cognito.UserPool;
   public readonly userPoolClient: cognito.UserPoolClient;
+  public readonly documentSigningKey: kms.Key;
   public readonly appRole: iam.Role;
 
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -179,7 +181,20 @@ export class HipaaBaaStack extends Stack {
       },
     });
 
-    // ─── Resource 5: IAM Role ──────────────────────────────────────────
+    // ─── Resource 5: KMS Key for Document Signing ──────────────────────
+    // Asymmetric ECC_NIST_P256 key for digital signatures (ECDSA_SHA_256).
+    // FIPS 140-2 Level 3 validated HSMs — provides non-repudiation for
+    // signed BAA documents per HIPAA Security Rule 45 CFR 164.312(c).
+    this.documentSigningKey = new kms.Key(this, "DocumentSigningKey", {
+      alias: "alias/hipaa-baa-document-signing",
+      description: "Asymmetric key for BAA document digital signatures (ECDSA_SHA_256)",
+      keySpec: kms.KeySpec.ECC_NIST_P256,
+      keyUsage: kms.KeyUsage.SIGN_VERIFY,
+      removalPolicy: RemovalPolicy.RETAIN,
+      enabled: true,
+    });
+
+    // ─── Resource 6: IAM Role ──────────────────────────────────────────
     this.appRole = new iam.Role(this, "HipaaBaaAppRole", {
       roleName: "HipaaBaaAppRole",
       assumedBy: new iam.CompositePrincipal(
@@ -287,6 +302,21 @@ export class HipaaBaaStack extends Stack {
       })
     );
 
+    // KMS Sign/Verify for document signing
+    this.appRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: "KMSDocumentSigning",
+        effect: iam.Effect.ALLOW,
+        actions: [
+          "kms:Sign",
+          "kms:Verify",
+          "kms:GetPublicKey",
+          "kms:DescribeKey",
+        ],
+        resources: [this.documentSigningKey.keyArn],
+      })
+    );
+
     // ─── Outputs ───────────────────────────────────────────────────────
     new CfnOutput(this, "TableName", {
       value: this.table.tableName,
@@ -328,6 +358,18 @@ export class HipaaBaaStack extends Stack {
       value: this.appRole.roleArn,
       description: "IAM application role ARN",
       exportName: "HipaaBaa-AppRoleArn",
+    });
+
+    new CfnOutput(this, "DocumentSigningKeyArn", {
+      value: this.documentSigningKey.keyArn,
+      description: "KMS key ARN for document digital signatures",
+      exportName: "HipaaBaa-DocumentSigningKeyArn",
+    });
+
+    new CfnOutput(this, "DocumentSigningKeyId", {
+      value: this.documentSigningKey.keyId,
+      description: "KMS key ID for document digital signatures (use as KMS_DOCUMENT_SIGNING_KEY_ID env var)",
+      exportName: "HipaaBaa-DocumentSigningKeyId",
     });
   }
 }

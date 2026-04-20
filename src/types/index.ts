@@ -35,6 +35,62 @@ export type ContractType =
   | "baa_medical_records_storage_roi_services"
   | "other";
 
+// ─── Template Types ──────────────────────────────────────────────────────────
+
+export interface BAATemplate {
+  version: string;
+  effectiveDate: string;
+  approvedBy: string;
+  supersedes: string | null;
+  sourceDocument: string;
+  cfrMappings: Record<string, string>;
+  changeLog: string[];
+}
+
+/**
+ * Values required to populate the MSDH BAA template placeholders.
+ * Matches the {{PLACEHOLDER}} markers in the template text.
+ */
+export interface MSDHTemplateValues {
+  BA_NAME: string;
+  BA_ADDRESS: string;
+  UNDERLYING_AGREEMENT_REF: string;
+  BA_NOTICE_NAME: string;
+  BA_NOTICE_ATTN: string;
+  BA_NOTICE_TITLE: string;
+  BA_NOTICE_ADDRESS: string;
+  BA_NOTICE_PHONE: string;
+  BA_NOTICE_EMAIL: string;
+  BA_SIGNER_NAME: string;
+  BA_SIGNER_TITLE: string;
+  BA_SIGNER_ADDRESS: string;
+  BA_SIGNER_PHONE: string;
+  BA_SIGNATURE_DATE: string;
+  MSDH_SIGNER_NAME: string;
+  MSDH_SIGNER_TITLE: string;
+  MSDH_SIGNER_ADDRESS: string;
+  MSDH_SIGNER_PHONE: string;
+  MSDH_SIGNATURE_DATE: string;
+}
+
+/**
+ * A single row in the 164.504(e)(2) compliance matrix.
+ */
+export interface ComplianceMatrixRow {
+  cfrCitation: string;
+  cfrRequirement: string;
+  msdhSection: string;
+  msdhSummary: string;
+  satisfied: boolean;
+}
+
+export interface ComplianceMatrix {
+  baaId: string;
+  templateVersion: string;
+  generatedAt: string;
+  rows: ComplianceMatrixRow[];
+}
+
 // ─── Signing / Snapshot Types ─────────────────────────────────────────────────
 
 export interface SigningCertificate {
@@ -134,6 +190,10 @@ export interface BAA {
   versionType: 'original' | 'amendment' | 'renewal' | 'extension';
   /** SHA-256 hash of the signed PDF document. */
   signedDocumentHash: string | null;
+  /** Base64-encoded KMS digital signature of the document hash. */
+  kmsSignature: string | null;
+  /** ARN of the KMS key used to create the digital signature. */
+  kmsKeyArn: string | null;
   /** Counter-signature by the covered entity (clinic). */
   counterSignedDate: string | null;
   counterSignedBy: string | null;
@@ -146,6 +206,16 @@ export interface BAA {
   terminationNotes: string | null;
   /** Who terminated the BAA. */
   terminatedBy: string | null;
+  /** Whether this BAA was platform-generated or uploaded as vendor paper. */
+  source: "generated" | "uploaded";
+  /** User who uploaded the vendor-supplied PDF (when source="uploaded"). */
+  uploadedBy: string | null;
+  /** ISO 8601 timestamp of upload (when source="uploaded"). */
+  uploadedAt: string | null;
+  /** Name of the attorney/officer who reviewed the uploaded BAA. */
+  legalReviewedBy: string | null;
+  /** ISO 8601 timestamp of legal review completion. */
+  legalReviewedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -219,6 +289,8 @@ export interface VendorSeedRecord {
     | "documentUrl"
     | "signedDocumentUrl"
     | "signedDocumentHash"
+    | "kmsSignature"
+    | "kmsKeyArn"
     | "signingCertificate"
     | "signedSnapshot"
     | "documentVersion"
@@ -228,6 +300,11 @@ export interface VendorSeedRecord {
     | "terminationReason"
     | "terminationNotes"
     | "terminatedBy"
+    | "source"
+    | "uploadedBy"
+    | "uploadedAt"
+    | "legalReviewedBy"
+    | "legalReviewedAt"
     | "createdAt"
     | "updatedAt"
   >;

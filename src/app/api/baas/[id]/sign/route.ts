@@ -7,6 +7,7 @@ import { signedConfirmationEmail, adminNotificationEmail } from "@/lib/email/tem
 import { uploadToS3 } from "@/lib/storage/s3";
 import { generateContractPDF } from "@/lib/pdf/generator";
 import { logger } from "@/lib/logger";
+import { kmsSignDocumentHash } from "@/lib/signing/kms";
 import type { SigningCertificate, SignedSnapshot } from "@/types";
 
 interface RouteContext {
@@ -143,7 +144,24 @@ export async function POST(
         signedDocumentUrl = pdfKey;
         logger.info("Signed PDF uploaded to S3", { baaId: id, key: pdfKey });
 
-        // Update the BAA with the S3 key, document hash, and updated signing certificate
+        // KMS digital signature for non-repudiation
+        let kmsSignature: string | null = null;
+        let kmsKeyArn: string | null = null;
+        try {
+          const kmsResult = await kmsSignDocumentHash(documentHash);
+          if (kmsResult) {
+            kmsSignature = kmsResult.signature;
+            kmsKeyArn = kmsResult.keyArn;
+            logger.info("KMS digital signature applied", { baaId: id, keyArn: kmsKeyArn });
+          }
+        } catch (kmsErr) {
+          logger.warn("KMS signing failed — document hash still stored", {
+            baaId: id,
+            error: kmsErr instanceof Error ? kmsErr.message : String(kmsErr),
+          });
+        }
+
+        // Update the BAA with the S3 key, document hash, KMS signature, and updated signing certificate
         const { updateBAA } = await import("@/lib/db");
         const updatedCertificate: SigningCertificate = {
           ...signingCertificate,
@@ -152,6 +170,8 @@ export async function POST(
         await updateBAA(id, {
           signedDocumentUrl: pdfKey,
           signedDocumentHash: documentHash,
+          kmsSignature,
+          kmsKeyArn,
           signingCertificate: updatedCertificate,
         });
       }

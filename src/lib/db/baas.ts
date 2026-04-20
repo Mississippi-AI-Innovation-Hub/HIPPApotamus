@@ -320,6 +320,9 @@ export async function updateBAA(
       signedBy: updatedBAA.signedBy,
       documentUrl: updatedBAA.documentUrl,
       signedDocumentUrl: updatedBAA.signedDocumentUrl,
+      signedDocumentHash: updatedBAA.signedDocumentHash,
+      kmsSignature: updatedBAA.kmsSignature,
+      kmsKeyArn: updatedBAA.kmsKeyArn,
       signingCertificate: updatedBAA.signingCertificate,
       signedSnapshot: updatedBAA.signedSnapshot,
       documentVersion: updatedBAA.documentVersion,
@@ -329,6 +332,11 @@ export async function updateBAA(
       termYears: updatedBAA.termYears,
       requiresStateLawRetentionNotice:
         updatedBAA.requiresStateLawRetentionNotice,
+      source: updatedBAA.source,
+      uploadedBy: updatedBAA.uploadedBy,
+      uploadedAt: updatedBAA.uploadedAt,
+      legalReviewedBy: updatedBAA.legalReviewedBy,
+      legalReviewedAt: updatedBAA.legalReviewedAt,
       updatedAt: now,
       GSI1PK: `STATUS#${updatedBAA.status}`,
       GSI1SK: `EXPIRY#${updatedBAA.expirationDate}`,
@@ -336,6 +344,7 @@ export async function updateBAA(
 
     let i = 0;
     for (const [key, value] of Object.entries(fieldsToUpdate)) {
+      if (value === undefined) continue;
       const nameAlias = `#f${i}`;
       const valueAlias = `:v${i}`;
       expressionNames[nameAlias] = key;
