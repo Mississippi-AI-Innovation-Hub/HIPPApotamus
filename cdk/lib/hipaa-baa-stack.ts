@@ -13,6 +13,8 @@ import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as kms from "aws-cdk-lib/aws-kms";
+import * as events from "aws-cdk-lib/aws-events";
+import * as eventsTargets from "aws-cdk-lib/aws-events-targets";
 
 export class HipaaBaaStack extends Stack {
   public readonly table: dynamodb.TableV2;
@@ -370,6 +372,59 @@ export class HipaaBaaStack extends Stack {
       value: this.documentSigningKey.keyId,
       description: "KMS key ID for document digital signatures (use as KMS_DOCUMENT_SIGNING_KEY_ID env var)",
       exportName: "HipaaBaa-DocumentSigningKeyId",
+    });
+
+    // ─── Resource 7: Reminder Cron (EventBridge → API Destination) ─────
+    // Daily HTTPS call to /api/cron/reminders. The endpoint authenticates
+    // the caller against a Bearer token stored in Secrets Manager. Reminders
+    // are idempotent per-threshold via BAA.reminderHistory so a re-run of
+    // the same day is safe.
+    const cronSecret = new secretsmanager.Secret(this, "ReminderCronSecret", {
+      secretName: "hipaa-baa-reminder-cron-secret",
+      description: "Bearer token used by EventBridge → /api/cron/reminders",
+      generateSecretString: {
+        passwordLength: 48,
+        excludePunctuation: true,
+      },
+    });
+
+    const reminderConnection = new events.Connection(this, "ReminderCronConnection", {
+      connectionName: "hipaa-baa-reminder-cron",
+      authorization: events.Authorization.apiKey("X-Cron-Auth", cronSecret.secretValue),
+      description: "API key auth for the reminder cron API destination",
+    });
+
+    const reminderDestination = new events.ApiDestination(this, "ReminderCronDestination", {
+      apiDestinationName: "hipaa-baa-reminder-cron",
+      connection: reminderConnection,
+      endpoint: `${appUrlParam.valueAsString}/api/cron/reminders`,
+      httpMethod: events.HttpMethod.POST,
+      rateLimitPerSecond: 1,
+      description: "POSTs to the reminder cron endpoint daily",
+    });
+
+    new events.Rule(this, "ReminderCronRule", {
+      ruleName: "hipaa-baa-reminder-cron-daily",
+      description: "Fires the reminder cron once per day at 14:00 UTC (≈9am EST)",
+      schedule: events.Schedule.cron({
+        minute: "0",
+        hour: "14",
+        day: "*",
+        month: "*",
+        year: "*",
+      }),
+      targets: [
+        new eventsTargets.ApiDestination(reminderDestination, {
+          retryAttempts: 3,
+          maxEventAge: Duration.hours(1),
+        }),
+      ],
+    });
+
+    new CfnOutput(this, "ReminderCronSecretArn", {
+      value: cronSecret.secretArn,
+      description: "Secrets Manager ARN for the reminder cron bearer token (set as CRON_SECRET in app env)",
+      exportName: "HipaaBaa-ReminderCronSecretArn",
     });
   }
 }

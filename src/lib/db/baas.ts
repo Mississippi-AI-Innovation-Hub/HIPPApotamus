@@ -337,6 +337,7 @@ export async function updateBAA(
       uploadedAt: updatedBAA.uploadedAt,
       legalReviewedBy: updatedBAA.legalReviewedBy,
       legalReviewedAt: updatedBAA.legalReviewedAt,
+      reminderHistory: updatedBAA.reminderHistory,
       updatedAt: now,
       GSI1PK: `STATUS#${updatedBAA.status}`,
       GSI1SK: `EXPIRY#${updatedBAA.expirationDate}`,

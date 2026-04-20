@@ -216,6 +216,9 @@ export interface BAA {
   legalReviewedBy: string | null;
   /** ISO 8601 timestamp of legal review completion. */
   legalReviewedAt: string | null;
+  /** Per-threshold reminder send log so cron doesn't double-send. Key
+   *  format: "{kind}:{threshold}" (e.g., "expiration:30", "pending_signature:7"). */
+  reminderHistory: Record<string, string> | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -305,6 +308,7 @@ export interface VendorSeedRecord {
     | "uploadedAt"
     | "legalReviewedBy"
     | "legalReviewedAt"
+    | "reminderHistory"
     | "createdAt"
     | "updatedAt"
   >;

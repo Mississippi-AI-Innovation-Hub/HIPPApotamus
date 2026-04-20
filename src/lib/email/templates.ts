@@ -40,6 +40,25 @@ interface AdminNotificationParams {
   timestamp: string;
 }
 
+interface PendingSignatureReminderParams {
+  vendorName: string;
+  contactName: string;
+  clinicName: string;
+  baaId: string;
+  daysSinceInvitation: number;
+  signingUrl: string;
+}
+
+interface PendingCounterSignReminderParams {
+  hipaaOfficerName: string;
+  vendorName: string;
+  clinicName: string;
+  baaId: string;
+  daysSinceVendorSigned: number;
+  vendorSignerName: string;
+  dashboardUrl: string;
+}
+
 export function baaInvitationEmail(
   params: BAAInvitationParams,
 ): EmailContent {
@@ -178,6 +197,100 @@ Date Signed: ${signedDate}
 Download your signed BAA at: ${documentUrl}
 
 Please retain a copy of this document for your records. Under HIPAA regulations, BAAs must be maintained for a minimum of six years from the date of creation or last effective date.`,
+  };
+}
+
+export function pendingSignatureReminderEmail(
+  params: PendingSignatureReminderParams,
+): EmailContent {
+  const { vendorName, contactName, clinicName, baaId, daysSinceInvitation, signingUrl } = params;
+  const urgency = daysSinceInvitation >= 14 ? "URGENT: " : daysSinceInvitation >= 7 ? "Reminder: " : "";
+
+  return {
+    subject: `${urgency}BAA Awaiting Your Signature - ${clinicName} & ${vendorName}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="utf-8"></head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #334155; max-width: 600px; margin: 0 auto;">
+        <div style="background: ${daysSinceInvitation >= 14 ? "#dc2626" : daysSinceInvitation >= 7 ? "#ea580c" : "#0d9488"}; padding: 24px; border-radius: 8px 8px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 20px;">Signature Reminder</h1>
+          <p style="color: white; margin: 4px 0 0; opacity: 0.9;">${daysSinceInvitation} days since invitation</p>
+        </div>
+        <div style="padding: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+          <p>Dear ${contactName},</p>
+          <p>It has been <strong>${daysSinceInvitation} days</strong> since <strong>${clinicName}</strong> sent you a Business Associate Agreement for <strong>${vendorName}</strong>, and we have not yet received your signature.</p>
+          <p><strong>BAA Reference:</strong> ${baaId}</p>
+          <p>Please review and sign at your earliest convenience to avoid delays in our partnership.</p>
+          <p style="text-align: center; margin: 24px 0;">
+            <a href="${signingUrl}" style="background: #0d9488; color: white; padding: 12px 32px; text-decoration: none; border-radius: 6px; font-weight: bold;">Review &amp; Sign BAA</a>
+          </p>
+          <p style="font-size: 13px; color: #64748b;">A signed BAA is required before HIPAA-regulated information can be shared. If you have already signed and believe this is an error, please reply to this email.</p>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `Dear ${contactName},
+
+It has been ${daysSinceInvitation} days since ${clinicName} sent you a Business Associate Agreement for ${vendorName}, and we have not yet received your signature.
+
+BAA Reference: ${baaId}
+
+Review and sign at: ${signingUrl}
+
+A signed BAA is required before HIPAA-regulated information can be shared.`,
+  };
+}
+
+export function pendingCounterSignReminderEmail(
+  params: PendingCounterSignReminderParams,
+): EmailContent {
+  const {
+    hipaaOfficerName,
+    vendorName,
+    clinicName,
+    baaId,
+    daysSinceVendorSigned,
+    vendorSignerName,
+    dashboardUrl,
+  } = params;
+  const urgency = daysSinceVendorSigned >= 7 ? "URGENT: " : daysSinceVendorSigned >= 3 ? "Action Required: " : "";
+
+  return {
+    subject: `${urgency}Counter-Sign BAA - ${vendorName}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="utf-8"></head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #334155; max-width: 600px; margin: 0 auto;">
+        <div style="background: ${daysSinceVendorSigned >= 7 ? "#dc2626" : "#d97706"}; padding: 24px; border-radius: 8px 8px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 20px;">Counter-Signature Required</h1>
+          <p style="color: white; margin: 4px 0 0; opacity: 0.9;">${daysSinceVendorSigned} day${daysSinceVendorSigned === 1 ? "" : "s"} awaiting your action</p>
+        </div>
+        <div style="padding: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+          <p>Dear ${hipaaOfficerName},</p>
+          <p><strong>${vendorSignerName}</strong> from <strong>${vendorName}</strong> signed the Business Associate Agreement <strong>${daysSinceVendorSigned} day${daysSinceVendorSigned === 1 ? "" : "s"} ago</strong>. The agreement is awaiting your counter-signature to be fully executed.</p>
+          <p><strong>BAA Reference:</strong> ${baaId}<br/>
+          <strong>Covered Entity:</strong> ${clinicName}</p>
+          <p>Until counter-signed, the agreement is not legally binding and PHI cannot be shared with the vendor.</p>
+          <p style="text-align: center; margin: 24px 0;">
+            <a href="${dashboardUrl}" style="background: #d97706; color: white; padding: 12px 32px; text-decoration: none; border-radius: 6px; font-weight: bold;">Open Dashboard to Counter-Sign</a>
+          </p>
+          <p style="font-size: 13px; color: #64748b;">Counter-signature completes the bilateral signing ceremony required under 45 CFR §164.504(e).</p>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `Dear ${hipaaOfficerName},
+
+${vendorSignerName} from ${vendorName} signed the BAA ${daysSinceVendorSigned} day(s) ago. The agreement is awaiting your counter-signature to be fully executed.
+
+BAA Reference: ${baaId}
+Covered Entity: ${clinicName}
+
+Counter-sign at: ${dashboardUrl}
+
+Until counter-signed, the agreement is not legally binding and PHI cannot be shared with the vendor.`,
   };
 }
 

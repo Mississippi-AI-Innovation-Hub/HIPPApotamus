@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
       uploadedAt: null,
       legalReviewedBy: null,
       legalReviewedAt: null,
+      reminderHistory: null,
     });
 
     await addAuditLog({

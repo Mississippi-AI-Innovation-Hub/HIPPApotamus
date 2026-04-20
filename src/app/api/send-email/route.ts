@@ -6,11 +6,19 @@ import {
   reminderEmail,
   signedConfirmationEmail,
   adminNotificationEmail,
+  pendingSignatureReminderEmail,
+  pendingCounterSignReminderEmail,
 } from "@/lib/email/templates";
 import { addAuditLog } from "@/lib/db";
 import { logger } from "@/lib/logger";
 
-type EmailType = "invitation" | "reminder" | "signed_confirmation" | "admin_notification";
+type EmailType =
+  | "invitation"
+  | "reminder"
+  | "signed_confirmation"
+  | "admin_notification"
+  | "pending_signature_reminder"
+  | "pending_countersign_reminder";
 
 interface SendEmailBody {
   type: EmailType;
@@ -74,6 +82,29 @@ export async function POST(request: NextRequest) {
           action: String(body.params["action"] ?? ""),
           performedBy: String(body.params["performedBy"] ?? ""),
           timestamp: String(body.params["timestamp"] ?? ""),
+        });
+        break;
+
+      case "pending_signature_reminder":
+        emailContent = pendingSignatureReminderEmail({
+          vendorName: String(body.params["vendorName"] ?? ""),
+          contactName: String(body.params["contactName"] ?? ""),
+          clinicName: String(body.params["clinicName"] ?? ""),
+          baaId: String(body.params["baaId"] ?? ""),
+          daysSinceInvitation: Number(body.params["daysSinceInvitation"] ?? 0),
+          signingUrl: String(body.params["signingUrl"] ?? ""),
+        });
+        break;
+
+      case "pending_countersign_reminder":
+        emailContent = pendingCounterSignReminderEmail({
+          hipaaOfficerName: String(body.params["hipaaOfficerName"] ?? ""),
+          vendorName: String(body.params["vendorName"] ?? ""),
+          clinicName: String(body.params["clinicName"] ?? ""),
+          baaId: String(body.params["baaId"] ?? ""),
+          daysSinceVendorSigned: Number(body.params["daysSinceVendorSigned"] ?? 0),
+          vendorSignerName: String(body.params["vendorSignerName"] ?? ""),
+          dashboardUrl: String(body.params["dashboardUrl"] ?? ""),
         });
         break;
 
