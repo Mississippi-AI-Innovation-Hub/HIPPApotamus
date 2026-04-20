@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { getRequiredSession } from "@/lib/auth/session";
 import { getBAAById, getVendorById, getClinic, updateBAA, addAuditLog } from "@/lib/db";
-import { uploadToS3 } from "@/lib/storage/s3";
+import { uploadToS3, getObjectFromS3 } from "@/lib/storage/s3";
 import { generateContractPDF } from "@/lib/pdf/generator";
+import { sendEmail } from "@/lib/email/sender";
+import { signedConfirmationEmail } from "@/lib/email/templates";
 import { logger } from "@/lib/logger";
 import { kmsSignDocumentHash } from "@/lib/signing/kms";
-import type { SigningCertificate } from "@/types";
 
 /**
  * POST /api/baas/[id]/countersign
@@ -80,14 +81,30 @@ export async function POST(
     let signedDocumentHash: string | null = null;
 
     if (vendor && clinic) {
+      // Fetch the vendor's drawn signature so the regenerated PDF embeds
+      // it alongside the new counter-signature. Without this, the regen
+      // only renders the counter-side as drawn — vendor block reverts to
+      // text-only because each PDF render is from scratch, not an edit.
+      let vendorSignatureDataUrl: string | undefined;
       try {
-        // Pass both signatures to the PDF generator
+        const vendorSigBuffer = await getObjectFromS3(`signatures/${id}.png`);
+        if (vendorSigBuffer) {
+          vendorSignatureDataUrl = `data:image/png;base64,${vendorSigBuffer.toString("base64")}`;
+        }
+      } catch (sigErr) {
+        logger.warn("Could not load vendor signature for counter-sign regen", {
+          baaId: id,
+          error: sigErr instanceof Error ? sigErr.message : String(sigErr),
+        });
+      }
+
+      try {
         const pdfBuffer = await generateContractPDF(
           { ...baa, counterSignedBy: counterSignerName, counterSignerTitle, counterSignedDate: now, status: "active" },
           vendor,
           clinic,
-          undefined, // vendor signature already embedded from first signing
-          body.signature, // counter-signature
+          vendorSignatureDataUrl,
+          body.signature,
         );
 
         signedDocumentHash = crypto.createHash("sha256").update(pdfBuffer).digest("hex");
@@ -155,6 +172,27 @@ export async function POST(
       },
       ipAddress: ip,
     });
+
+    // Notify vendor + clinic admin that the BAA is fully executed
+    if (vendor && clinic) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+      const confirmation = signedConfirmationEmail({
+        vendorName: vendor.name,
+        contactName: vendor.contactName,
+        clinicName: clinic.name,
+        baaId: id,
+        signedDate: now,
+        documentUrl: `${baseUrl}/baas/${id}`,
+      });
+
+      await sendEmail({ to: vendor.contactEmail, ...confirmation });
+
+      const adminEmail =
+        clinic.contactEmail ?? process.env.ADMIN_EMAIL ?? null;
+      if (adminEmail && adminEmail.toLowerCase() !== vendor.contactEmail.toLowerCase()) {
+        await sendEmail({ to: adminEmail, ...confirmation });
+      }
+    }
 
     logger.info("BAA counter-signed", { baaId: id, counterSignerName, status: "active" });
 
