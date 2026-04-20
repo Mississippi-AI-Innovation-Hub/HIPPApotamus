@@ -110,6 +110,8 @@ export async function POST(request: NextRequest) {
       documentUrl: null,
       signedDocumentUrl: null,
       signedDocumentHash: null,
+      kmsSignature: null,
+      kmsKeyArn: null,
       signingCertificate: null,
       signedSnapshot: null,
       documentVersion: 1,
@@ -122,10 +124,15 @@ export async function POST(request: NextRequest) {
       counterSignedDate: null,
       counterSignedBy: null,
       counterSignerTitle: null,
-      templateVersion: body.templateVersion ?? "v1.0.0",
+      templateVersion: body.templateVersion ?? "2026.1",
       termYears,
       requiresStateLawRetentionNotice:
         vendor.type === "medical_records_storage",
+      source: "generated",
+      uploadedBy: null,
+      uploadedAt: null,
+      legalReviewedBy: null,
+      legalReviewedAt: null,
     });
 
     // Add audit log

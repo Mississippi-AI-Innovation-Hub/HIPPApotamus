@@ -5,6 +5,7 @@ import { getBAAById, getVendorById, getClinic, addAuditLog } from "@/lib/db";
 import { generateContractPDF, generateAuditPacket } from "@/lib/pdf/generator";
 import { uploadToS3, getPresignedUrl, getObjectFromS3 } from "@/lib/storage/s3";
 import { logger } from "@/lib/logger";
+import { kmsVerifyDocumentHash, isKmsConfigured } from "@/lib/signing/kms";
 
 interface RouteContext {
   params: Promise<{ baaId: string }>;
@@ -58,6 +59,7 @@ export async function GET(
           // ── SHA-256 Integrity Verification ──────────────────────────────
           // Re-compute the hash and compare against the stored hash.
           // If they don't match, the document has been tampered with.
+          let kmsVerified: boolean | null | string = "not-checked";
           if (baa.signedDocumentHash) {
             const computedHash = crypto.createHash("sha256").update(Buffer.from(storedPdf)).digest("hex");
             if (computedHash !== baa.signedDocumentHash) {
@@ -90,7 +92,40 @@ export async function GET(
               );
             }
 
-            logger.info("Document integrity check passed", { baaId });
+            // KMS digital signature verification (if available)
+            if (baa.kmsSignature && baa.kmsKeyArn) {
+              const kmsResult = await kmsVerifyDocumentHash(computedHash, baa.kmsSignature, baa.kmsKeyArn);
+              kmsVerified = kmsResult;
+              if (kmsResult === false) {
+                logger.error("SECURITY ALERT: KMS signature verification FAILED", {
+                  baaId,
+                  keyArn: baa.kmsKeyArn,
+                });
+
+                await addAuditLog({
+                  baaId,
+                  vendorId: baa.vendorId,
+                  action: "KMS_VERIFICATION_FAILED",
+                  performedBy: session.name ?? session.email,
+                  details: {
+                    message: "KMS digital signature verification failed — document may have been tampered with",
+                    keyArn: baa.kmsKeyArn,
+                  },
+                  ipAddress: request.headers.get("x-forwarded-for"),
+                });
+
+                return NextResponse.json(
+                  {
+                    error: "Security Alert: KMS digital signature verification failed. This incident has been logged.",
+                    code: "KMS_VERIFICATION_FAILED",
+                  },
+                  { status: 409 },
+                );
+              }
+              logger.info("KMS signature verification passed", { baaId, keyArn: baa.kmsKeyArn });
+            }
+
+            logger.info("Document integrity check passed", { baaId, kmsVerified });
           }
 
           await addAuditLog({
@@ -102,6 +137,7 @@ export async function GET(
               source: "s3_stored",
               key: baa.signedDocumentUrl,
               integrityVerified: !!baa.signedDocumentHash,
+              kmsVerified: baa.kmsSignature ? kmsVerified : "no-signature",
             },
             ipAddress: request.headers.get("x-forwarded-for"),
           });
@@ -112,6 +148,7 @@ export async function GET(
               "Content-Disposition": `inline; filename="BAA_${baaId}_signed.pdf"`,
               "X-Document-Hash": baa.signedDocumentHash ?? "not-available",
               "X-Integrity-Verified": baa.signedDocumentHash ? "true" : "no-hash-stored",
+              "X-KMS-Verified": String(kmsVerified),
             },
           });
         }

@@ -250,6 +250,14 @@ export function ExecutiveSummaryPDF({
             <Text style={styles.cardLabel}>TEMPLATE VERSION:</Text>
             <Text style={styles.cardValue}>{baa.templateVersion}</Text>
           </View>
+          <View style={styles.cardRow}>
+            <Text style={styles.cardLabel}>DOCUMENT SOURCE:</Text>
+            <Text style={styles.cardValue}>
+              {baa.source === "uploaded"
+                ? `Vendor-supplied (legal-reviewed by ${baa.legalReviewedBy ?? "pending"})`
+                : "Platform-generated from MSDH template"}
+            </Text>
+          </View>
           {baa.signedDate && (
             <View style={styles.cardRow}>
               <Text style={styles.cardLabel}>SIGNED:</Text>

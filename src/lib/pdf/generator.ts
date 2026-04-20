@@ -6,7 +6,11 @@ import JSZip from "jszip";
 import { BaaContractPDF } from "./BaaContractPDF";
 import { AuditTrailPDF } from "./AuditTrailPDF";
 import { ExecutiveSummaryPDF } from "./ExecutiveSummaryPDF";
+import { ComplianceMatrixPDF } from "./ComplianceMatrixPDF";
 import { populateTemplate } from "@/lib/baa/template";
+import { populate as populateMSDH } from "@/lib/baa/templates/populate";
+import { getTemplate } from "@/lib/baa/templates/registry";
+import { generateComplianceMatrix } from "@/lib/baa/cfrMatrix";
 import { getAuditLogsByBAA } from "@/lib/db/auditLogs";
 import { logger } from "@/lib/logger";
 import type { BAA, Vendor, Clinic, AuditLog } from "@/types";
@@ -34,30 +38,62 @@ export async function generateContractPDF(
   counterSignatureImage?: string,
 ): Promise<Buffer> {
   try {
-    const populatedContent = populateTemplate({
-      coveredEntityName: clinic.name,
-      coveredEntityAddress: clinic.address,
-      coveredEntityContact: `${clinic.contactName} (${clinic.contactEmail})`,
-      coveredEntityNPI: clinic.npi,
-      hipaaOfficer: clinic.hipaaOfficer,
-      businessAssociateName: vendor.name,
-      businessAssociateAddress: vendor.address,
-      businessAssociateContact: `${vendor.contactName} (${vendor.contactEmail})`,
-      effectiveDate: baa.effectiveDate,
-      expirationDate: baa.expirationDate,
-      termYears: String(baa.termYears),
-      contractType: baa.contractType.replace(/_/g, " "),
-      breachNotificationDays: String(vendor.breachNotificationSLADays),
-      stateRetentionNotice: baa.requiresStateLawRetentionNotice
-        ? "Business Associate acknowledges Mississippi state law (Miss. Code Ann. 41-9-69) requires 10-year retention of medical records."
-        : "",
-      subcontractorCompliance: vendor.requiresSubcontractorCompliance
-        ? "Business Associate shall ensure all subcontractors agree in writing to the same restrictions and conditions."
-        : "Not applicable.",
-      soc2Requirement: vendor.requiresSoc2Report
-        ? "Business Associate shall provide annual SOC 2 Type II audit reports."
-        : "Not applicable.",
-    });
+    const registeredTemplate = getTemplate(baa.templateVersion);
+
+    let populatedContent: string;
+
+    if (registeredTemplate) {
+      populatedContent = populateMSDH(baa.templateVersion, {
+        BA_NAME: vendor.name,
+        BA_ADDRESS: vendor.address,
+        UNDERLYING_AGREEMENT_REF: baa.contractType.replace(/_/g, " "),
+        BA_NOTICE_NAME: vendor.name,
+        BA_NOTICE_ATTN: vendor.contactName,
+        BA_NOTICE_TITLE: vendor.authorizedSignerTitle,
+        BA_NOTICE_ADDRESS: vendor.address,
+        BA_NOTICE_PHONE: vendor.contactPhone,
+        BA_NOTICE_EMAIL: vendor.contactEmail,
+        BA_SIGNER_NAME: vendor.contactName,
+        BA_SIGNER_TITLE: vendor.authorizedSignerTitle,
+        BA_SIGNER_ADDRESS: vendor.address,
+        BA_SIGNER_PHONE: vendor.contactPhone,
+        BA_SIGNATURE_DATE: baa.signedDate
+          ? new Date(baa.signedDate).toLocaleDateString("en-US")
+          : "_______________",
+        MSDH_SIGNER_NAME: clinic.contactName,
+        MSDH_SIGNER_TITLE: clinic.hipaaOfficer,
+        MSDH_SIGNER_ADDRESS: clinic.address,
+        MSDH_SIGNER_PHONE: "(601)-576-7634",
+        MSDH_SIGNATURE_DATE: baa.counterSignedDate
+          ? new Date(baa.counterSignedDate).toLocaleDateString("en-US")
+          : "_______________",
+      });
+    } else {
+      populatedContent = populateTemplate({
+        coveredEntityName: clinic.name,
+        coveredEntityAddress: clinic.address,
+        coveredEntityContact: `${clinic.contactName} (${clinic.contactEmail})`,
+        coveredEntityNPI: clinic.npi,
+        hipaaOfficer: clinic.hipaaOfficer,
+        businessAssociateName: vendor.name,
+        businessAssociateAddress: vendor.address,
+        businessAssociateContact: `${vendor.contactName} (${vendor.contactEmail})`,
+        effectiveDate: baa.effectiveDate,
+        expirationDate: baa.expirationDate,
+        termYears: String(baa.termYears),
+        contractType: baa.contractType.replace(/_/g, " "),
+        breachNotificationDays: String(vendor.breachNotificationSLADays),
+        stateRetentionNotice: baa.requiresStateLawRetentionNotice
+          ? "Business Associate acknowledges Mississippi state law (Miss. Code Ann. 41-9-69) requires 10-year retention of medical records."
+          : "",
+        subcontractorCompliance: vendor.requiresSubcontractorCompliance
+          ? "Business Associate shall ensure all subcontractors agree in writing to the same restrictions and conditions."
+          : "Not applicable.",
+        soc2Requirement: vendor.requiresSoc2Report
+          ? "Business Associate shall provide annual SOC 2 Type II audit reports."
+          : "Not applicable.",
+      });
+    }
 
     const element = React.createElement(BaaContractPDF, {
       baa,
@@ -95,8 +131,11 @@ export async function generateAuditPacket(
     const generatedAt = new Date().toISOString();
     const logs: AuditLog[] = await getAuditLogsByBAA(baa.id);
 
-    // Generate all three PDFs in parallel
-    const [contractBuffer, auditTrailBuffer, summaryBuffer] =
+    // Generate compliance matrix
+    const matrix = generateComplianceMatrix(baa);
+
+    // Generate all four PDFs in parallel
+    const [contractBuffer, auditTrailBuffer, summaryBuffer, matrixBuffer] =
       await Promise.all([
         generateContractPDF(baa, vendor, clinic),
         renderToBuffer(
@@ -120,6 +159,15 @@ export async function generateAuditPacket(
             }),
           ),
         ).then((buf) => Buffer.from(buf)),
+        renderToBuffer(
+          asPdfElement(
+            React.createElement(ComplianceMatrixPDF, {
+              matrix,
+              vendorName: vendor.name,
+              generatedAt,
+            }),
+          ),
+        ).then((buf) => Buffer.from(buf)),
       ]);
 
     // Bundle into ZIP
@@ -134,6 +182,7 @@ export async function generateAuditPacket(
     folder.file("01_Executive_Summary.pdf", summaryBuffer);
     folder.file("02_BAA_Contract.pdf", contractBuffer);
     folder.file("03_Audit_Trail.pdf", auditTrailBuffer);
+    folder.file("04_Compliance_Matrix.pdf", matrixBuffer);
 
     const zipBuffer = await zip.generateAsync({
       type: "nodebuffer",
@@ -144,7 +193,7 @@ export async function generateAuditPacket(
     logger.info("Audit packet generated", {
       baaId: baa.id,
       vendorName: vendor.name,
-      fileCount: 3,
+      fileCount: 4,
     });
 
     return zipBuffer;

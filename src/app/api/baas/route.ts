@@ -51,6 +51,7 @@ interface CreateBAABody {
   templateVersion?: string;
   termYears?: 1 | 2;
   requiresStateLawRetentionNotice?: boolean;
+  source?: "generated" | "uploaded";
 }
 
 export async function POST(request: NextRequest) {
@@ -84,6 +85,8 @@ export async function POST(request: NextRequest) {
       documentUrl: null,
       signedDocumentUrl: null,
       signedDocumentHash: null,
+      kmsSignature: null,
+      kmsKeyArn: null,
       signingCertificate: null,
       signedSnapshot: null,
       documentVersion: 1,
@@ -96,10 +99,15 @@ export async function POST(request: NextRequest) {
       counterSignedDate: null,
       counterSignedBy: null,
       counterSignerTitle: null,
-      templateVersion: body.templateVersion ?? "v1.0.0",
+      templateVersion: body.templateVersion ?? "2026.1",
       termYears: body.termYears ?? 2,
       requiresStateLawRetentionNotice:
         body.requiresStateLawRetentionNotice ?? false,
+      source: body.source ?? "generated",
+      uploadedBy: null,
+      uploadedAt: null,
+      legalReviewedBy: null,
+      legalReviewedAt: null,
     });
 
     await addAuditLog({

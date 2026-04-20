@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import PDFPreviewModal from "@/components/dashboard/PDFPreviewModal";
 import CounterSignModal from "@/components/dashboard/CounterSignModal";
+import UploadBAAModal from "@/components/dashboard/UploadBAAModal";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const CLINIC_NAME = "Central Mississippi Health District";
@@ -229,6 +230,7 @@ export default function BAADetailsModal({
   const [sendingReminder, setSendingReminder] = useState(false);
   const [previewPDF, setPreviewPDF] = useState(false);
   const [showCounterSign, setShowCounterSign] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
 
   // Track whether the modal is visible (mounted in DOM) independently of the baa prop
   const [visible, setVisible] = useState(false);
@@ -495,6 +497,19 @@ export default function BAADetailsModal({
                 <DetailItem label="Template Version" value={currentBaa.templateVersion} mono />
                 <DetailItem label="Term" value={`${currentBaa.termYears} year${currentBaa.termYears > 1 ? "s" : ""}`} />
               </div>
+              {currentBaa.source === "uploaded" && (
+                <div className="mt-3 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-700">
+                  <div className="flex items-center gap-1.5">
+                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                    </svg>
+                    <strong>Vendor-supplied</strong>
+                    {currentBaa.legalReviewedBy && (
+                      <span> &middot; Legal-reviewed by {currentBaa.legalReviewedBy}</span>
+                    )}
+                  </div>
+                </div>
+              )}
               {currentBaa.requiresStateLawRetentionNotice && (
                 <div className="mt-3 rounded-lg border border-[#CA8A04]/20 bg-[#FEFCE8] px-3 py-2 text-xs text-[#CA8A04]">
                   <strong>MS State Law:</strong> This vendor requires 10-year medical records retention notice per Mississippi state law.
@@ -618,6 +633,18 @@ export default function BAADetailsModal({
                 Counter-Sign (Clinic)
               </Button>
             )}
+            {currentBaa.source !== "uploaded" && (
+              <Button
+                variant="outline"
+                onClick={() => setShowUpload(true)}
+                className="border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
+              >
+                <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                </svg>
+                Upload Vendor BAA
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -639,6 +666,19 @@ export default function BAADetailsModal({
         open={showCounterSign}
         onClose={() => setShowCounterSign(false)}
         onSuccess={handleCounterSignSuccess}
+      />
+
+      {/* Upload Vendor BAA Modal */}
+      <UploadBAAModal
+        baaId={currentBaa.id}
+        vendorName={currentVendor.name}
+        open={showUpload}
+        onClose={() => setShowUpload(false)}
+        onSuccess={() => {
+          setShowUpload(false);
+          addToast("Vendor-supplied BAA uploaded and marked for legal review.", "success");
+          onClose();
+        }}
       />
     </>
   );

@@ -1329,3 +1329,174 @@ docs: update README with live deployment URL and demo instructions
 | ELEVENLABS_VOICE_ID | ElevenLabs voice library | TTS |
 | NEXT_PUBLIC_APP_URL | Your Amplify URL | Email links, CORS |
 | NEXT_PUBLIC_APP_NAME | `HIPAApotamus` | UI display |
+
+---
+
+## APPENDIX C — BAA Generation Strategy (Research-Backed)
+
+This appendix captures findings from a four-agent research pass covering HIPAA-specialist platforms, enterprise CLMs, legal/regulatory norms, and state health-agency procurement practice. It updates Milestone 9 and adds Milestone 11.
+
+### C.1 Research findings summary
+
+**Finding 1 — The covered entity drafts; the vendor signs what they're given.**
+State health agencies (Mississippi DOM, NY OMIG/OMH/OASAS, Florida AHCA, California CCHCS/DDS/DHCS, Texas HHS) uniformly mandate their own BAA template as a non-negotiable procurement attachment. Vendor-drafted BAAs are rejected as non-responsive bids. BAAs ride as an exhibit to the master procurement contract, not as a standalone document.
+
+**Finding 2 — Platform-generated templates dominate HIPAA-specific tools.**
+Accountable HQ, Compliancy Group, HIPAA One (Intraprise Health), and HIPAAtrek all lead with auto-filled templates. Upload exists as a secondary archive path. None hand off signing to DocuSign — they host the bilateral signing ceremony themselves. Customization at the clause level is table stakes; nobody ships a locked template.
+
+**Finding 3 — Enterprise CLMs are "upload-first but template-centric once loaded."**
+Ironclad, DocuSign CLM, and Agiloft have customers upload a Word master once, then parameterize it via merge fields, clause libraries, and conditional logic so every subsequent instance is effectively generated. Pure upload-and-tag (Adobe Sign, ContractWorks, SignWell) is the low end of the market.
+
+**Finding 4 — The HHS sample is a floor, not a ceiling.**
+HHS publishes "Sample Business Associate Agreement Provisions" at hhs.gov/hipaa but explicitly says it is illustrative. It omits indemnification, state-law clauses, breach-notification timing tighter than 60 days, and security-control specifics. Treating it as turnkey is a recurring OCR enforcement finding.
+
+**Finding 5 — Defective/outdated BAAs are a real enforcement risk.**
+OCR settlements cite missing or stale BAAs repeatedly: North Memorial ($1.55M), Raleigh Orthopaedic ($750K), Care New England ($400K — outdated pre-Omnibus template), Texas HHSC ($1.6M — missing BAA between parent/subsidiary). Template versioning and "which template version generated this BAA" traceability is an audit-defensibility requirement, not a nice-to-have.
+
+**Finding 6 — Core clauses are identical across vendor types; schedules differ.**
+The required elements under 45 CFR 164.504(e) do not change by vendor type. In commercial CLMs, what changes are: services description (Schedule A), permitted uses scope, security schedule (SOC 2 vs CLIA vs NAID AAA), subcontractor disclosure, audit-rights frequency, breach-notification timing, and state-specific addenda.
+
+**Finding 7 — MSDH-specific reality: one BAA template, vendor-type variance lives in the Underlying Agreement.**
+After reviewing the actual MSDH BAA (RFP #4635 Attachment C, "MSDH Business Associate Agreement"), MSDH uses **one unified template** that references an **"Underlying Agreement"** — defined in §II as "any applicable MOU, agreement, contract, or any other similar device, and any proposal or RFP related thereto." The BAA body is identical regardless of vendor archetype; the vendor-type differentiation (EHR vs lab vs telehealth etc.) lives in the procurement contract the BAA attaches to, not in the BAA itself. This **supersedes the earlier plan to build five vendor-type schedule modules** — MSDH doesn't work that way.
+
+**Finding 8 — MSDH-specific provisions stricter than generic HIPAA BAAs.**
+- 5-day breach notification (§III.d.i) — not HIPAA's 60-day floor
+- 10-working-day complete written breach report (§III.d.iii)
+- Encryption: "AES256 or Triple DES and SSL/TLS 1.2+" explicit (§III.n)
+- State of Mississippi ITS Enterprise Security Policy compliance required (§III.o)
+- Executive summary of most recent security audit on request (§III.p)
+- No offshore PHI transmission without written authorization (§III.m)
+- 6-year retention of disclosure logs (§III.g)
+- Credit monitoring ≥ 12 months for breach-affected individuals (§III.t)
+- Three-contact notification: MSDH Point-of-Contact + IT Security Officer + Privacy Officer
+- Indemnification runs toward MSDH (§VII.e)
+- Miss. Code Ann. § 11-46-1 (MS Tort Claims Act) governs MSDH liability
+- MS law governing law + MS courts venue
+
+**Finding 9 — Minimal fill-in surface.**
+The MSDH template has only ~10 blanks: BA legal name, BA principal place of business, Underlying Agreement reference, BA notice block (name/attn/title/address/phone/email), and BA signature block. MSDH's signatory is pre-printed (currently Daniel P. Edney, MD, FACP, FASAM, State Health Officer) and changes when the Officer changes — should be a configurable field on the clinic/org record, not hardcoded.
+
+### C.2 Architectural decision: hybrid with generation bias
+
+**Primary flow: platform-generated BAA from the real MSDH template (RFP #4635 Attachment C).**
+- One master template — the actual MSDH BAA document, ported verbatim to `msdh_baa_v2026.1.ts` with `{{PLACEHOLDER}}` syntax for the ~10 fill-in fields.
+- Auto-fill: BA legal name, BA address, Underlying Agreement reference (RFP/contract ID), BA notice block (name/attn/title/address/phone/email), BA signature fields.
+- MSDH signatory block is configurable via the clinic/org record (currently Daniel P. Edney, MD, FACP, FASAM, State Health Officer) — not hardcoded, since the Officer changes.
+- The Underlying Agreement reference is how vendor-type variance is captured — the BAA attaches to the service contract (e.g., "RFP 4635 — Integrated Disease Surveillance Platform"), and the vendor-type-specific scope lives in that underlying contract, not in the BAA.
+- Every clause maps to a specific 164.504(e)(2) subsection for audit-defensibility — this is the MSDH-specific moat no commercial tool offers.
+- Template is versioned (`v2026.1`, `v2026.2`, ...) so "outdated BAA" findings are traceable (Care New England is the cautionary tale). Version bumps happen when MSDH General Counsel revises the template.
+
+**What NOT to build (corrected from earlier plan):**
+- ~~Five vendor-type schedule modules (EHR, lab, telehealth, e-prescribing, records storage).~~ MSDH doesn't operate this way. One template handles all vendor types via the Underlying Agreement reference. The vendor-type differences live in the procurement contract, not the BAA.
+
+**Secondary flow: PDF upload exception path.**
+- Some large vendors (AWS, Google, Microsoft, Epic, Salesforce) insist on their own form. Upload is an exception that triggers a legal-review task, not the default.
+- Upload stored in the same S3 `signed-documents/` prefix with a `source: "generated" | "uploaded"` flag on the BAA record.
+- Uploaded BAAs are flagged visually in audit packets as "vendor-supplied, legal-reviewed" so auditors distinguish the two.
+
+**What NOT to build:**
+- No clause library / redlining / approval routing (Ironclad/Agiloft territory, massive scope, MSDH doesn't negotiate core terms with vendors).
+- No DocuSign/Adobe Sign handoff for signing (you already have the bilateral KMS-signed ceremony — that's the right call and matches every HIPAA-specialist platform).
+- Do not rely on the HHS sample provisions as your default template body — it's incomplete for state government use.
+
+---
+
+## MILESTONE 11 — MSDH Template Port, Registry, Upload Exception
+
+### What this milestone proves to stakeholders
+"Every BAA we generate is the actual MSDH legal-approved template, traceable to a specific template version, and we can accept large-vendor paper as an exception without breaking the audit trail."
+
+### Background
+Milestone 9 built a generic flat template based on the HHS sample. This milestone replaces it with the **real MSDH BAA template** from RFP #4635 Attachment C, adds versioning so legal-approved revisions are traceable, and adds an upload exception path for large vendors who insist on their own paper. See Appendix C (Findings 7–9) for why the earlier "five vendor-type schedules" plan was wrong for MSDH.
+
+**Source document:** `/Users/bipuladhikari/Downloads/rfp4635 Attachment C.docx` — the MSDH BAA provided by the customer. This is the authoritative text; do not paraphrase.
+
+### Session 11A — MSDH template port and registry
+
+**Files to create:**
+- `src/lib/baa/templates/registry.ts` — template version registry (`v2026.1`, `v2026.2`, ...) with metadata: `version`, `effectiveDate`, `approvedBy`, `supersedes`, `sourceDocument`, `cfrMappings`, `changeLog`
+- `src/lib/baa/templates/msdh_baa_v2026_1.ts` — the full MSDH BAA text ported verbatim from RFP #4635 Attachment C, with `{{PLACEHOLDER}}` markers for the fill-in fields. Section structure matches the source document:
+  - Recitals (MSDH principal place of business, BA principal place of business `{{BA_ADDRESS}}`, Underlying Agreement reference `{{UNDERLYING_AGREEMENT_REF}}`)
+  - §II Definitions (fixed, no variables)
+  - §III Obligations of Business Associate (fixed, includes the 5-day breach notification, AES256/TLS 1.2+ encryption, no-offshore, ITS Enterprise Security Policy compliance)
+  - §IV Permitted Uses and Disclosures (fixed)
+  - §V Obligations of MSDH (fixed)
+  - §VI Term and Termination (fixed)
+  - §VII Miscellaneous (fixed, includes Miss. Code Ann. § 11-46-1 reference, indemnification, MS law/venue)
+  - §VII.h Notices: BA contact block — `{{BA_NOTICE_NAME}}`, `{{BA_NOTICE_ATTN}}`, `{{BA_NOTICE_TITLE}}`, `{{BA_NOTICE_ADDRESS}}`, `{{BA_NOTICE_PHONE}}`, `{{BA_NOTICE_EMAIL}}`
+  - Signature page: BA block (`{{BA_SIGNER_NAME}}`, `{{BA_SIGNER_TITLE}}`, `{{BA_SIGNER_ADDRESS}}`, `{{BA_SIGNER_PHONE}}`, `{{BA_SIGNATURE_DATE}}`) and MSDH block (`{{MSDH_SIGNER_NAME}}`, `{{MSDH_SIGNER_TITLE}}`, `{{MSDH_SIGNER_ADDRESS}}`, `{{MSDH_SIGNER_PHONE}}`, `{{MSDH_SIGNATURE_DATE}}`) — MSDH block populated from the clinic/org record, not hardcoded
+- `src/lib/baa/templates/populate.ts` — `populate(templateVersion: string, values: MSDHTemplateValues): string` — loads the registered template text and replaces placeholders; throws if any placeholder is unresolved (no silent `{{FOO}}` leaks into signed PDFs)
+- `src/lib/baa/cfrMappings.ts` — structured map from each 45 CFR 164.504(e)(2)(i)–(iv) required element to the MSDH section that satisfies it (e.g., `"164.504(e)(2)(i)(A)"` → `"§III.a — permitted uses limited to Underlying Agreement"`, `"164.504(e)(2)(ii)(C)"` → `"§III.d — 5-day breach notification"`, etc.)
+
+**Type additions to `src/types/index.ts`:**
+```ts
+interface BAATemplate {
+  version: string;              // e.g. "2026.1"
+  effectiveDate: string;
+  approvedBy: string;           // e.g. "MSDH Office of General Counsel"
+  supersedes: string | null;
+  cfrMappings: Record<string, string>;  // clauseId -> CFR subsection
+  changeLog: string[];
+}
+
+interface BAA {
+  // ... existing fields ...
+  templateVersion: string;      // already exists — now backed by registry
+  source: "generated" | "uploaded";  // NEW
+  uploadedBy?: string;           // NEW — when source="uploaded"
+  uploadedAt?: string;           // NEW
+  legalReviewedBy?: string;      // NEW — required when source="uploaded"
+  legalReviewedAt?: string;      // NEW
+}
+```
+
+**DB updates (`src/lib/db/baas.ts`):** add `source`, `uploadedBy`, `uploadedAt`, `legalReviewedBy`, `legalReviewedAt` to the `fieldsToUpdate` map in `updateBAA`. The `undefined`-skip fix from the sign-route bug already handles optional fields safely.
+
+**Commits:**
+```
+feat(templates): add versioned template registry with CFR mappings
+feat(templates): add vendor-type schedule modules for 5 archetypes
+feat(templates): compose master + vendor schedule at generation time
+feat(types): add source/upload metadata fields to BAA
+```
+
+### Session 11B — Upload exception path
+
+**Files to create:**
+- `src/app/api/baas/[id]/upload/route.ts` — admin-only PUT that accepts multipart PDF upload, stores to S3 as `signed-documents/{id}-v{N}-uploaded.pdf`, sets `source: "uploaded"`, requires `legalReviewedBy` in the form
+- `src/components/dashboard/UploadBAAModal.tsx` — admin modal with file picker, legal-reviewer-name field, warning banner explaining this is an exception flow
+
+**UI changes:**
+- Contract creation flow gets a new "Vendor has existing BAA paper" toggle. When on, skip template generation and show the upload modal.
+- BAA detail modal shows a distinct badge (`Vendor-supplied · Legal-reviewed by {name}`) when `source === "uploaded"`.
+- Audit packet generator groups BAAs by source in the compliance matrix so auditors see the distinction.
+
+**Commits:**
+```
+feat(upload): add admin-only BAA upload exception path
+feat(ui): add upload modal with legal-review attestation
+feat(audit): distinguish generated vs uploaded BAAs in audit packets
+```
+
+### Session 11C — CFR clause mapping & audit matrix
+
+**Files to create:**
+- `src/lib/baa/cfrMatrix.ts` — `generateComplianceMatrix(baa: BAA): ComplianceMatrix` returns a structured object mapping each 164.504(e)(2) subsection to the clause that satisfies it in the generated document
+- `src/components/dashboard/ComplianceMatrix.tsx` — renders the matrix as a table in the audit packet UI
+- `src/lib/pdf/ComplianceMatrixPDF.tsx` — adds the matrix as a page in generated audit packets
+
+**Why this matters:** OCR enforcement actions (North Memorial, Care New England) cite "missing required elements" as a frequent finding. Shipping a compliance matrix with every audit packet means MSDH can demonstrate clause-by-clause satisfaction of 164.504(e)(2) without hiring a lawyer to re-read every BAA.
+
+**Commits:**
+```
+feat(compliance): generate 164.504(e)(2) compliance matrix per BAA
+feat(audit): embed compliance matrix in audit packet PDFs
+```
+
+### Verification
+- [ ] Create a BAA for an EHR vendor → generated PDF contains the EHR schedule (SOC 2, 24h breach reporting)
+- [ ] Create a BAA for a medical records storage vendor → generated PDF contains Miss. Code § 41-9-60 retention clause
+- [ ] Bump template version `2026.1` → `2026.2` → new BAAs record the new version; old BAAs still show `2026.1`
+- [ ] Upload a vendor-supplied PDF as an admin → BAA shows `source: "uploaded"` with the legal-reviewer name
+- [ ] Open an audit packet → compliance matrix renders with every 164.504(e)(2) subsection accounted for
+- [ ] Non-admin users cannot access the upload endpoint (403)
