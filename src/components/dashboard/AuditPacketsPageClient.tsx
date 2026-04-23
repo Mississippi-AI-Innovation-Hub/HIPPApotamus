@@ -1,7 +1,15 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { AuditLog, BAA, Vendor } from "@/types";
+import { useRouter } from "next/navigation";
+import type {
+  AuditLog,
+  AuditPacket,
+  AuditPacketDocument,
+  AuditPacketDocumentType,
+  BAA,
+  Vendor,
+} from "@/types";
 import { useToast } from "@/components/ui/Toast";
 import PDFPreviewModal from "@/components/dashboard/PDFPreviewModal";
 import {
@@ -29,6 +37,7 @@ interface AuditPacketsPageClientProps {
   vendors: Vendor[];
   baas: BAA[];
   auditLogs: AuditLog[];
+  initialPackets: AuditPacket[];
 }
 
 interface PacketOptions {
@@ -38,15 +47,6 @@ interface PacketOptions {
 }
 
 type GenerationStatus = "idle" | "generating" | "complete" | "error";
-
-interface GeneratedPacket {
-  id: string;
-  name: string;
-  date: string;
-  contractsIncluded: number;
-  size: string;
-  status: "complete" | "generating" | "failed";
-}
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -68,6 +68,13 @@ function formatRelativeTime(dateStr: string): string {
   return `${Math.floor(diffDays / 30)} months ago`;
 }
 
+function formatBytes(bytes: number | null): string {
+  if (bytes === null || bytes === 0) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 function getStatusBadgeColor(status: BAA["status"]): string {
   switch (status) {
     case "active":
@@ -87,92 +94,68 @@ function formatStatusLabel(status: BAA["status"]): string {
   return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-const GENERATION_STEPS = [
-  "Collecting contracts...",
-  "Building audit trail...",
-  "Generating executive summary...",
-  "Creating ZIP...",
-];
-
-// ─── Demo packets for history table ─────────────────────────────────────────
-
-interface PacketDocument {
-  id: string;
-  name: string;
-  type: "contract" | "audit-trail" | "executive-summary" | "state-addendum";
-  size: string;
-  vendorName?: string;
-  baaId?: string;
-}
-
-interface GeneratedPacketWithDocs extends GeneratedPacket {
-  documents: PacketDocument[];
-}
-
-const DEMO_PACKETS: GeneratedPacketWithDocs[] = [
-  {
-    id: "pkt-001",
-    name: "Compliance Report — February 2026",
-    date: "2026-02-28T14:30:00Z",
-    contractsIncluded: 5,
-    size: "4.2 MB",
-    status: "complete",
-    documents: [
-      { id: "d1", name: "Executive Summary", type: "executive-summary", size: "245 KB" },
-      { id: "d2", name: "BAA — CareCloud EHR Systems", type: "contract", size: "890 KB", vendorName: "CareCloud EHR" },
-      { id: "d3", name: "BAA — MedBridge Lab Solutions", type: "contract", size: "875 KB", vendorName: "MedBridge Lab" },
-      { id: "d4", name: "BAA — DataVault Health Records", type: "contract", size: "910 KB", vendorName: "DataVault Health" },
-      { id: "d5", name: "BAA — SecureRx Pharmacy Network", type: "contract", size: "860 KB", vendorName: "SecureRx Pharmacy" },
-      { id: "d6", name: "BAA — TeleHealth Connect MS", type: "contract", size: "845 KB", vendorName: "TeleHealth Connect" },
-      { id: "d7", name: "Full Audit Trail", type: "audit-trail", size: "320 KB" },
-      { id: "d8", name: "MS State Law Addendum (§ 41-9-60)", type: "state-addendum", size: "56 KB" },
-    ],
+const DOC_TYPE_ICONS: Record<
+  AuditPacketDocumentType,
+  { color: string; bg: string; icon: string }
+> = {
+  executive_summary: {
+    color: "#15803D",
+    bg: "#DCFCE7",
+    icon: "M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6",
   },
-  {
-    id: "pkt-002",
-    name: "Q4 2025 Audit Packet",
-    date: "2026-01-15T09:15:00Z",
-    contractsIncluded: 5,
-    size: "3.8 MB",
-    status: "complete",
-    documents: [
-      { id: "d9", name: "Executive Summary", type: "executive-summary", size: "210 KB" },
-      { id: "d10", name: "BAA — CareCloud EHR Systems", type: "contract", size: "890 KB", vendorName: "CareCloud EHR" },
-      { id: "d11", name: "BAA — MedBridge Lab Solutions", type: "contract", size: "875 KB", vendorName: "MedBridge Lab" },
-      { id: "d12", name: "Full Audit Trail", type: "audit-trail", size: "290 KB" },
-    ],
+  audit_trail: {
+    color: "#1D4ED8",
+    bg: "#DBEAFE",
+    icon: "M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z",
   },
-  {
-    id: "pkt-003",
-    name: "Annual Review — 2025",
-    date: "2025-12-31T16:45:00Z",
-    contractsIncluded: 5,
-    size: "6.1 MB",
-    status: "complete",
-    documents: [
-      { id: "d13", name: "Executive Summary", type: "executive-summary", size: "380 KB" },
-      { id: "d14", name: "All Contract PDFs (5)", type: "contract", size: "4.2 MB" },
-      { id: "d15", name: "Full Audit Trail", type: "audit-trail", size: "510 KB" },
-      { id: "d16", name: "MS State Law Addendum (§ 41-9-60)", type: "state-addendum", size: "56 KB" },
-    ],
+  contract: {
+    color: "#0F766E",
+    bg: "#CCFBF1",
+    icon: "M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z",
   },
-  {
-    id: "pkt-004",
-    name: "Compliance Report — November 2025",
-    date: "2025-11-30T11:00:00Z",
-    contractsIncluded: 3,
-    size: "2.7 MB",
-    status: "failed",
-    documents: [],
+  compliance_matrix: {
+    color: "#7C3AED",
+    bg: "#EDE9FE",
+    icon: "M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z",
   },
-];
-
-const DOC_TYPE_ICONS: Record<PacketDocument["type"], { color: string; bg: string; icon: string }> = {
-  contract: { color: "#0F766E", bg: "#CCFBF1", icon: "M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" },
-  "audit-trail": { color: "#1D4ED8", bg: "#DBEAFE", icon: "M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" },
-  "executive-summary": { color: "#15803D", bg: "#DCFCE7", icon: "M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" },
-  "state-addendum": { color: "#CA8A04", bg: "#FEFCE8", icon: "M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" },
 };
+
+const DOC_TYPE_LABEL: Record<AuditPacketDocumentType, string> = {
+  executive_summary: "Executive Summary",
+  audit_trail: "Audit Trail",
+  contract: "Contract",
+  compliance_matrix: "Compliance Matrix",
+};
+
+// Trigger a browser download of a Blob with the given filename.
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function fetchAndDownload(
+  url: string,
+  filename: string,
+  onError: (msg: string) => void,
+): Promise<boolean> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(data.error ?? `Download failed (${res.status})`);
+    }
+    const blob = await res.blob();
+    downloadBlob(blob, filename);
+    return true;
+  } catch (err) {
+    onError(err instanceof Error ? err.message : "Download failed");
+    return false;
+  }
+}
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
@@ -180,8 +163,10 @@ export default function AuditPacketsPageClient({
   vendors,
   baas,
   auditLogs,
+  initialPackets,
 }: AuditPacketsPageClientProps) {
   const { addToast } = useToast();
+  const router = useRouter();
 
   // ── Generation form state ──
   const now = new Date();
@@ -196,44 +181,40 @@ export default function AuditPacketsPageClient({
     includeExecutiveSummary: true,
   });
   const [status, setStatus] = useState<GenerationStatus>("idle");
-  const [progress, setProgress] = useState(0);
-  const [progressMessage, setProgressMessage] = useState("");
-  const [packets, setPackets] = useState<GeneratedPacketWithDocs[]>([]);
+  const [generatingMessage, setGeneratingMessage] = useState("");
+  const [packets, setPackets] = useState<AuditPacket[]>(initialPackets);
+  const [lastGenerated, setLastGenerated] = useState<AuditPacket | null>(null);
   const [previewBaaId, setPreviewBaaId] = useState<string | null>(null);
   const [previewVendorName, setPreviewVendorName] = useState("");
   const [expandedPacketId, setExpandedPacketId] = useState<string | null>(null);
+  const [downloadingDocKey, setDownloadingDocKey] = useState<string | null>(null);
 
-  // Ref for scrolling to generation section
   const generateSectionRef = useRef<HTMLDivElement>(null);
 
   // ── Computed values ──
   const activeBAAs = useMemo(
     () => baas.filter((b) => b.status === "active").length,
-    [baas]
+    [baas],
   );
-
   const complianceScore = useMemo(() => {
     if (baas.length === 0) return 0;
     return Math.round((activeBAAs / baas.length) * 100);
   }, [activeBAAs, baas.length]);
-
   const totalDocumentation = useMemo(
     () => ({
       contracts: baas.length,
       auditEvents: auditLogs.length,
     }),
-    [baas.length, auditLogs.length]
+    [baas.length, auditLogs.length],
   );
-
   const lastAudit = useMemo(() => {
     if (auditLogs.length === 0) return null;
     const sorted = [...auditLogs].sort(
       (a, b) =>
-        new Date(b.performedAt).getTime() - new Date(a.performedAt).getTime()
+        new Date(b.performedAt).getTime() - new Date(a.performedAt).getTime(),
     );
     return sorted[0];
   }, [auditLogs]);
-
   const scoreColor = useMemo(() => {
     if (complianceScore > 80) return { ring: "#15803D", text: "text-emerald-700", bg: "bg-emerald-50" };
     if (complianceScore >= 50) return { ring: "#CA8A04", text: "text-amber-700", bg: "bg-amber-50" };
@@ -241,20 +222,14 @@ export default function AuditPacketsPageClient({
   }, [complianceScore]);
 
   // ── Actions ──
-  const allSelected = selectedBAAIds.size === baas.length && baas.length > 0;
-
   const toggleBAA = (id: string) => {
     setSelectedBAAIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
-
   const selectAll = () => setSelectedBAAIds(new Set(baas.map((b) => b.id)));
   const deselectAll = () => setSelectedBAAIds(new Set());
 
@@ -265,75 +240,103 @@ export default function AuditPacketsPageClient({
     }
 
     setStatus("generating");
-    setProgress(0);
-    setProgressMessage(GENERATION_STEPS[0]);
+    setGeneratingMessage("Generating PDFs and compiling the ZIP. This may take a few seconds...");
 
     try {
-      const totalSteps = 12;
-      for (let i = 1; i <= totalSteps; i++) {
-        await new Promise((resolve) => setTimeout(resolve, 250));
-        const pct = Math.round((i / totalSteps) * 100);
-        setProgress(pct);
-        // Update message based on progress
-        if (pct <= 25) setProgressMessage(GENERATION_STEPS[0]);
-        else if (pct <= 50) setProgressMessage(GENERATION_STEPS[1]);
-        else if (pct <= 75) setProgressMessage(GENERATION_STEPS[2]);
-        else setProgressMessage(GENERATION_STEPS[3]);
+      const res = await fetch("/api/audit-packets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: packetName,
+          baaIds: Array.from(selectedBAAIds),
+          dateFrom: dateFrom || null,
+          dateTo: dateTo || null,
+          options,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error ?? `Generation failed (${res.status})`);
       }
 
-      // Add new packet to history
-      const packetId = `pkt-${Date.now()}`;
-      const newPacket: GeneratedPacketWithDocs = {
-        id: packetId,
-        name: packetName,
-        date: new Date().toISOString(),
-        contractsIncluded: selectedBAAIds.size,
-        size: `${(selectedBAAIds.size * 0.8 + 1.2).toFixed(1)} MB`,
-        status: "complete",
-        documents: [
-          ...(options.includeExecutiveSummary ? [{ id: `${packetId}-exec`, name: "Executive Summary", type: "executive-summary" as const, size: "245 KB" }] : []),
-          ...Array.from(selectedBAAIds).map((baaId) => {
-            const baa = baas.find((b) => b.id === baaId);
-            const vendor = baa ? vendors.find((v) => v.id === baa.vendorId) : null;
-            return { id: `${packetId}-${baaId}`, name: `BAA — ${vendor?.name ?? baaId}`, type: "contract" as const, size: "890 KB", vendorName: vendor?.name, baaId };
-          }),
-          ...(options.includeAuditTrail ? [{ id: `${packetId}-trail`, name: "Full Audit Trail", type: "audit-trail" as const, size: "320 KB" }] : []),
-        ],
-      };
-      setPackets((prev) => [newPacket, ...prev]);
-
+      const data = (await res.json()) as { packet: AuditPacket };
+      setPackets((prev) => [data.packet, ...prev]);
+      setLastGenerated(data.packet);
       setStatus("complete");
       addToast("Audit packet generated successfully", "success");
-    } catch {
+      router.refresh();
+    } catch (err) {
       setStatus("error");
-      addToast("Failed to generate audit packet", "error");
+      const message = err instanceof Error ? err.message : "Generation failed";
+      addToast(message, "error");
     }
-  }, [selectedBAAIds, packetName, addToast]);
-
-  const handleDownload = useCallback(() => {
-    addToast("Downloading audit packet...", "info");
-    // In production, this would trigger an S3 download
-  }, [addToast]);
+  }, [selectedBAAIds, packetName, dateFrom, dateTo, options, addToast, router]);
 
   const handleReset = useCallback(() => {
     setStatus("idle");
-    setProgress(0);
-    setProgressMessage("");
+    setGeneratingMessage("");
     setSelectedBAAIds(new Set());
+    setLastGenerated(null);
     const resetNow = new Date();
     setPacketName(
-      `Compliance Report — ${resetNow.toLocaleString("default", { month: "long" })} ${resetNow.getFullYear()}`
+      `Compliance Report — ${resetNow.toLocaleString("default", { month: "long" })} ${resetNow.getFullYear()}`,
     );
     setDateFrom("");
     setDateTo("");
   }, []);
 
   const handleDeletePacket = useCallback(
-    (id: string) => {
-      setPackets((prev) => prev.filter((p) => p.id !== id));
-      addToast("Packet deleted", "info");
+    async (id: string, name: string) => {
+      if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
+      try {
+        const res = await fetch(`/api/audit-packets/${id}`, { method: "DELETE" });
+        if (!res.ok) {
+          const data = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(data.error ?? "Delete failed");
+        }
+        setPackets((prev) => prev.filter((p) => p.id !== id));
+        addToast("Packet deleted", "info");
+        router.refresh();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Delete failed";
+        addToast(message, "error");
+      }
     },
-    [addToast]
+    [addToast, router],
+  );
+
+  const handleDownloadDocument = useCallback(
+    async (packet: AuditPacket, doc: AuditPacketDocument) => {
+      const key = `${packet.id}-${doc.type}-${doc.baaId ?? "aggregate"}`;
+      setDownloadingDocKey(key);
+      const params = new URLSearchParams({ doc: doc.type });
+      if (doc.baaId) params.set("baaId", doc.baaId);
+      const filename = `${doc.name.replace(/[^\w\-]+/g, "_")}.pdf`;
+      await fetchAndDownload(
+        `/api/audit-packets/${packet.id}/download?${params.toString()}`,
+        filename,
+        (msg) => addToast(`Failed to download ${doc.name}: ${msg}`, "error"),
+      );
+      setDownloadingDocKey(null);
+    },
+    [addToast],
+  );
+
+  const handleDownloadZip = useCallback(
+    async (packet: AuditPacket) => {
+      const key = `${packet.id}-zip`;
+      setDownloadingDocKey(key);
+      const filename = `${packet.name.replace(/[^\w\-]+/g, "_")}.zip`;
+      const ok = await fetchAndDownload(
+        `/api/audit-packets/${packet.id}/download?doc=zip`,
+        filename,
+        (msg) => addToast(`Failed to download packet: ${msg}`, "error"),
+      );
+      if (ok) addToast(`Downloaded ${packet.name}`, "success");
+      setDownloadingDocKey(null);
+    },
+    [addToast],
   );
 
   const scrollToGenerate = useCallback(() => {
@@ -347,6 +350,8 @@ export default function AuditPacketsPageClient({
     setDateFrom(firstOfMonth.toISOString().split("T")[0]);
     setDateTo(today.toISOString().split("T")[0]);
   }, []);
+
+  const allSelected = selectedBAAIds.size === baas.length && baas.length > 0;
 
   return (
     <div className="space-y-8 px-8 py-8">
@@ -368,18 +373,8 @@ export default function AuditPacketsPageClient({
           className="bg-[#0F766E] text-white hover:bg-[#0D6560]"
           size="lg"
         >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 4.5v15m7.5-7.5h-15"
-            />
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
           Generate New Packet
         </Button>
@@ -394,23 +389,11 @@ export default function AuditPacketsPageClient({
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-6">
-              {/* Circular progress ring */}
               <div className="relative flex h-20 w-20 shrink-0 items-center justify-center">
                 <svg className="h-20 w-20 -rotate-90" viewBox="0 0 80 80">
+                  <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" strokeWidth="6" className="text-slate-100" />
                   <circle
-                    cx="40"
-                    cy="40"
-                    r="34"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="6"
-                    className="text-slate-100"
-                  />
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="34"
-                    fill="none"
+                    cx="40" cy="40" r="34" fill="none"
                     stroke={scoreColor.ring}
                     strokeWidth="6"
                     strokeLinecap="round"
@@ -449,18 +432,8 @@ export default function AuditPacketsPageClient({
           <CardContent>
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#0F766E]/10">
-                <svg
-                  className="h-6 w-6 text-[#0F766E]"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
-                  />
+                <svg className="h-6 w-6 text-[#0F766E]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                 </svg>
               </div>
               <div>
@@ -486,44 +459,23 @@ export default function AuditPacketsPageClient({
           <CardContent>
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50">
-                <svg
-                  className="h-6 w-6 text-blue-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                  />
+                <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>
               </div>
               <div>
                 {lastAudit ? (
                   <>
-                    <p
-                      className="text-2xl font-bold text-foreground"
-                      style={{ fontFamily: "'Satoshi', sans-serif" }}
-                    >
+                    <p className="text-2xl font-bold text-foreground" style={{ fontFamily: "'Satoshi', sans-serif" }}>
                       {formatRelativeTime(lastAudit.performedAt)}
                     </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {lastAudit.action}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      by {lastAudit.performedBy}
-                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{lastAudit.action}</p>
+                    <p className="text-xs text-muted-foreground">by {lastAudit.performedBy}</p>
                   </>
                 ) : (
                   <>
-                    <p className="text-lg font-semibold text-muted-foreground">
-                      No audit events
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      Actions will appear here
-                    </p>
+                    <p className="text-lg font-semibold text-muted-foreground">No audit events</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">Actions will appear here</p>
                   </>
                 )}
               </div>
@@ -536,23 +488,10 @@ export default function AuditPacketsPageClient({
       <div ref={generateSectionRef}>
         <Card className="shadow-premium">
           <CardHeader>
-            <CardTitle
-              className="text-lg font-bold"
-              style={{ fontFamily: "'Satoshi', sans-serif" }}
-            >
+            <CardTitle className="text-lg font-bold" style={{ fontFamily: "'Satoshi', sans-serif" }}>
               <div className="flex items-center gap-2">
-                <svg
-                  className="h-5 w-5 text-[#0F766E]"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
-                  />
+                <svg className="h-5 w-5 text-[#0F766E]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                 </svg>
                 Generate Compliance Packet
               </div>
@@ -568,14 +507,10 @@ export default function AuditPacketsPageClient({
             <div className="space-y-6">
               {/* Packet name */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
-                  Packet Name
-                </label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Packet Name</label>
                 <Input
                   value={packetName}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setPacketName(e.target.value)
-                  }
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPacketName(e.target.value)}
                   placeholder="Compliance Report — March 2026"
                   className="max-w-lg"
                   disabled={status === "generating"}
@@ -584,16 +519,12 @@ export default function AuditPacketsPageClient({
 
               {/* Date range */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
-                  Date Range
-                </label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Date Range</label>
                 <div className="flex items-center gap-3">
                   <Input
                     type="date"
                     value={dateFrom}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setDateFrom(e.target.value)
-                    }
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateFrom(e.target.value)}
                     className="w-44"
                     disabled={status === "generating"}
                   />
@@ -601,9 +532,7 @@ export default function AuditPacketsPageClient({
                   <Input
                     type="date"
                     value={dateTo}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setDateTo(e.target.value)
-                    }
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateTo(e.target.value)}
                     className="w-44"
                     disabled={status === "generating"}
                   />
@@ -612,28 +541,18 @@ export default function AuditPacketsPageClient({
 
               <Separator />
 
-              {/* Vendor/contract selection */}
+              {/* Contract selection */}
               <div>
                 <div className="mb-3 flex items-center justify-between">
-                  <label className="text-sm font-medium text-foreground">
-                    Select Contracts
-                  </label>
+                  <label className="text-sm font-medium text-foreground">Select Contracts</label>
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={selectAll}
-                      disabled={status === "generating"}
-                      className="text-xs font-medium text-[#0F766E] transition-colors hover:text-[#0D6560] disabled:opacity-50"
-                    >
+                    <button type="button" onClick={selectAll} disabled={status === "generating" || allSelected}
+                      className="text-xs font-medium text-[#0F766E] transition-colors hover:text-[#0D6560] disabled:opacity-50">
                       Select All
                     </button>
                     <span className="text-xs text-muted-foreground">|</span>
-                    <button
-                      type="button"
-                      onClick={deselectAll}
-                      disabled={status === "generating"}
-                      className="text-xs font-medium text-[#0F766E] transition-colors hover:text-[#0D6560] disabled:opacity-50"
-                    >
+                    <button type="button" onClick={deselectAll} disabled={status === "generating" || selectedBAAIds.size === 0}
+                      className="text-xs font-medium text-[#0F766E] transition-colors hover:text-[#0D6560] disabled:opacity-50">
                       Deselect All
                     </button>
                   </div>
@@ -663,9 +582,7 @@ export default function AuditPacketsPageClient({
                             {getVendorName(vendors, baa.vendorId)}
                           </p>
                           <div className="mt-1 flex items-center gap-2">
-                            <span
-                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getStatusBadgeColor(baa.status)}`}
-                            >
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getStatusBadgeColor(baa.status)}`}>
                               {formatStatusLabel(baa.status)}
                             </span>
                           </div>
@@ -673,20 +590,16 @@ export default function AuditPacketsPageClient({
                       </label>
                     );
                   })}
-
                   {baas.length === 0 && (
                     <div className="col-span-full rounded-lg border border-dashed border-border p-8 text-center">
-                      <p className="text-sm text-muted-foreground">
-                        No BAA contracts found. Add vendors to get started.
-                      </p>
+                      <p className="text-sm text-muted-foreground">No BAA contracts found. Add vendors to get started.</p>
                     </div>
                   )}
                 </div>
 
                 {selectedBAAIds.size > 0 && (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {selectedBAAIds.size} contract
-                    {selectedBAAIds.size !== 1 ? "s" : ""} selected
+                    {selectedBAAIds.size} contract{selectedBAAIds.size !== 1 ? "s" : ""} selected
                   </p>
                 )}
               </div>
@@ -695,35 +608,27 @@ export default function AuditPacketsPageClient({
 
               {/* Include options */}
               <div>
-                <label className="mb-3 block text-sm font-medium text-foreground">
-                  Include in Packet
-                </label>
+                <label className="mb-3 block text-sm font-medium text-foreground">Include in Packet</label>
                 <div className="space-y-2">
                   <OptionToggle
                     label="Include Contract PDFs"
-                    description="Signed BAA documents for each selected vendor"
+                    description="Signed BAA documents for each selected vendor (plus a 45 CFR § 164.504(e)(2) compliance matrix per contract)"
                     checked={options.includePDFs}
-                    onChange={(v) =>
-                      setOptions({ ...options, includePDFs: v })
-                    }
+                    onChange={(v) => setOptions({ ...options, includePDFs: v })}
                     disabled={status === "generating"}
                   />
                   <OptionToggle
                     label="Include Audit Trail"
-                    description="Chronological log of all compliance actions and events"
+                    description="Aggregate chronological log of every compliance action across the selected BAAs"
                     checked={options.includeAuditTrail}
-                    onChange={(v) =>
-                      setOptions({ ...options, includeAuditTrail: v })
-                    }
+                    onChange={(v) => setOptions({ ...options, includeAuditTrail: v })}
                     disabled={status === "generating"}
                   />
                   <OptionToggle
                     label="Include Executive Summary"
-                    description="One-page overview of compliance posture and vendor status"
+                    description="Cover page with clinic info, compliance score, vendor status table, and HIPAA/MS retention language"
                     checked={options.includeExecutiveSummary}
-                    onChange={(v) =>
-                      setOptions({ ...options, includeExecutiveSummary: v })
-                    }
+                    onChange={(v) => setOptions({ ...options, includeExecutiveSummary: v })}
                     disabled={status === "generating"}
                   />
                 </div>
@@ -732,80 +637,43 @@ export default function AuditPacketsPageClient({
               {/* Progress / completion / error states */}
               {status === "generating" && (
                 <div className="rounded-lg border border-[#0F766E]/20 bg-[#CCFBF1]/50 px-5 py-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-sm font-medium text-[#0F766E]">
-                      {progressMessage}
-                    </span>
-                    <span className="font-mono text-sm font-bold text-[#0F766E]">
-                      {progress}%
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-[#0F766E]/10">
-                    <div
-                      className="h-full rounded-full bg-[#0F766E] transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    />
+                  <div className="flex items-center gap-3">
+                    <svg className="h-5 w-5 animate-spin text-[#0F766E]" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <span className="text-sm font-medium text-[#0F766E]">{generatingMessage}</span>
                   </div>
                 </div>
               )}
 
-              {status === "complete" && (
+              {status === "complete" && lastGenerated && (
                 <div className="rounded-lg border border-[#15803D]/20 bg-[#DCFCE7]/50 px-5 py-4">
                   <div className="flex items-center gap-3">
-                    <svg
-                      className="h-8 w-8 text-[#15803D]"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                      />
+                    <svg className="h-8 w-8 text-[#15803D]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                     </svg>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-[#15803D]">
-                        Audit packet ready for download
-                      </p>
+                      <p className="text-sm font-medium text-[#15803D]">Audit packet ready for download</p>
                       <p className="text-xs text-[#15803D]/80">
-                        {selectedBAAIds.size} contract
-                        {selectedBAAIds.size !== 1 ? "s" : ""} included
-                        {options.includeAuditTrail ? " with audit trail" : ""}
-                        {options.includeExecutiveSummary
-                          ? " and executive summary"
-                          : ""}
+                        {lastGenerated.baaIds.length} contract
+                        {lastGenerated.baaIds.length !== 1 ? "s" : ""} · {lastGenerated.documents.length} document
+                        {lastGenerated.documents.length !== 1 ? "s" : ""} · {formatBytes(lastGenerated.totalSizeBytes)}
                       </p>
                     </div>
                     <div className="flex gap-2">
                       <Button
-                        onClick={handleDownload}
+                        onClick={() => handleDownloadZip(lastGenerated)}
+                        disabled={downloadingDocKey === `${lastGenerated.id}-zip`}
                         className="bg-[#15803D] text-white hover:bg-[#166534]"
                         size="default"
                       >
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={2}
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
-                          />
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                         </svg>
-                        Download
+                        Download ZIP
                       </Button>
-                      <Button
-                        onClick={handleReset}
-                        variant="outline"
-                        size="default"
-                      >
-                        New Packet
-                      </Button>
+                      <Button onClick={handleReset} variant="outline" size="default">New Packet</Button>
                     </div>
                   </div>
                 </div>
@@ -814,30 +682,13 @@ export default function AuditPacketsPageClient({
               {status === "error" && (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-5 py-4">
                   <div className="flex items-center gap-3">
-                    <svg
-                      className="h-6 w-6 text-red-600"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
-                      />
+                    <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
                     </svg>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-red-700">
-                        Generation failed. Please try again.
-                      </p>
+                      <p className="text-sm font-medium text-red-700">Generation failed. Please try again.</p>
                     </div>
-                    <Button
-                      onClick={handleReset}
-                      variant="outline"
-                      size="default"
-                      className="border-red-200 text-red-700 hover:bg-red-50"
-                    >
+                    <Button onClick={handleReset} variant="outline" size="default" className="border-red-200 text-red-700 hover:bg-red-50">
                       Retry
                     </Button>
                   </div>
@@ -847,23 +698,9 @@ export default function AuditPacketsPageClient({
               {/* Generate button */}
               {(status === "idle" || status === "error") && (
                 <div className="flex justify-end">
-                  <Button
-                    onClick={handleGenerate}
-                    className="bg-[#0F766E] text-white hover:bg-[#0D6560]"
-                    size="lg"
-                  >
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2}
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
-                      />
+                  <Button onClick={handleGenerate} className="bg-[#0F766E] text-white hover:bg-[#0D6560]" size="lg">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                     </svg>
                     Generate Packet
                   </Button>
@@ -877,10 +714,7 @@ export default function AuditPacketsPageClient({
       {/* ── Section 4: Generated Packets History ── */}
       <Card className="shadow-premium">
         <CardHeader>
-          <CardTitle
-            className="text-lg font-bold"
-            style={{ fontFamily: "'Satoshi', sans-serif" }}
-          >
+          <CardTitle className="text-lg font-bold" style={{ fontFamily: "'Satoshi', sans-serif" }}>
             Generated Packets
           </CardTitle>
           <CardDescription>
@@ -891,8 +725,7 @@ export default function AuditPacketsPageClient({
           {packets.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border p-8 text-center">
               <p className="text-sm text-muted-foreground">
-                No packets generated yet. Create your first compliance packet
-                above.
+                No packets generated yet. Create your first compliance packet above.
               </p>
             </div>
           ) : (
@@ -920,10 +753,7 @@ export default function AuditPacketsPageClient({
                           <div className="flex items-center gap-2">
                             <svg
                               className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth={2}
-                              stroke="currentColor"
+                              fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
                             >
                               <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
                             </svg>
@@ -931,17 +761,15 @@ export default function AuditPacketsPageClient({
                           </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {new Date(packet.date).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
+                          {new Date(packet.generatedAt).toLocaleDateString("en-US", {
+                            month: "short", day: "numeric", year: "numeric",
                           })}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {packet.contractsIncluded}
+                          {packet.baaIds.length}
                         </TableCell>
                         <TableCell className="font-mono text-xs text-muted-foreground">
-                          {packet.size}
+                          {formatBytes(packet.totalSizeBytes)}
                         </TableCell>
                         <TableCell>
                           <PacketStatusBadge status={packet.status} />
@@ -952,8 +780,9 @@ export default function AuditPacketsPageClient({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => addToast(`Downloading ${packet.name}...`, "info")}
-                                title="Download entire packet"
+                                onClick={() => handleDownloadZip(packet)}
+                                disabled={downloadingDocKey === `${packet.id}-zip`}
+                                title="Download full packet (ZIP)"
                               >
                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -963,7 +792,7 @@ export default function AuditPacketsPageClient({
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleDeletePacket(packet.id)}
+                              onClick={() => handleDeletePacket(packet.id, packet.name)}
                               className="text-muted-foreground hover:text-red-600"
                               title="Delete packet"
                             >
@@ -986,33 +815,32 @@ export default function AuditPacketsPageClient({
                               <div className="space-y-1.5">
                                 {packet.documents.map((doc) => {
                                   const typeConfig = DOC_TYPE_ICONS[doc.type];
+                                  const docKey = `${packet.id}-${doc.type}-${doc.baaId ?? "aggregate"}`;
+                                  const isDownloading = downloadingDocKey === docKey;
                                   return (
                                     <div
-                                      key={doc.id}
+                                      key={docKey}
                                       className="flex items-center gap-3 rounded-lg border border-border/50 bg-background px-3 py-2.5 transition-colors hover:bg-muted/30"
                                     >
                                       <div
                                         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
                                         style={{ backgroundColor: typeConfig.bg }}
                                       >
-                                        <svg
-                                          className="h-4 w-4"
-                                          fill="none"
-                                          viewBox="0 0 24 24"
-                                          strokeWidth={1.5}
-                                          stroke="currentColor"
-                                          style={{ color: typeConfig.color }}
-                                        >
+                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ color: typeConfig.color }}>
                                           <path strokeLinecap="round" strokeLinejoin="round" d={typeConfig.icon} />
                                         </svg>
                                       </div>
                                       <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
-                                        {doc.vendorName && (
-                                          <p className="text-xs text-muted-foreground">{doc.vendorName}</p>
+                                        {(doc.vendorName || doc.type === "executive_summary" || doc.type === "audit_trail") && (
+                                          <p className="text-xs text-muted-foreground">
+                                            {doc.vendorName ?? `Aggregate across ${packet.baaIds.length} BAAs`}
+                                            {" · "}
+                                            {DOC_TYPE_LABEL[doc.type]}
+                                          </p>
                                         )}
                                       </div>
-                                      <span className="font-mono text-xs text-muted-foreground">{doc.size}</span>
+                                      <span className="font-mono text-xs text-muted-foreground">{formatBytes(doc.sizeBytes)}</span>
                                       {doc.type === "contract" && doc.baaId && (
                                         <button
                                           onClick={(e) => {
@@ -1032,30 +860,22 @@ export default function AuditPacketsPageClient({
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          if (doc.type === "contract" && doc.baaId) {
-                                            // Download real PDF for contract documents
-                                            fetch(`/api/pdf/${doc.baaId}`)
-                                              .then(res => res.blob())
-                                              .then(blob => {
-                                                const url = URL.createObjectURL(blob);
-                                                const a = document.createElement("a");
-                                                a.href = url;
-                                                a.download = `${doc.name}.pdf`;
-                                                a.click();
-                                                URL.revokeObjectURL(url);
-                                                addToast(`Downloaded ${doc.name}`, "success");
-                                              })
-                                              .catch(() => addToast(`Failed to download ${doc.name}`, "error"));
-                                          } else {
-                                            addToast(`${doc.name} is not yet available for download`, "warning");
-                                          }
+                                          void handleDownloadDocument(packet, doc);
                                         }}
-                                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                        disabled={isDownloading}
+                                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
                                         title={`Download ${doc.name}`}
                                       >
-                                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                                        </svg>
+                                        {isDownloading ? (
+                                          <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                          </svg>
+                                        ) : (
+                                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                          </svg>
+                                        )}
                                       </button>
                                     </div>
                                   );
@@ -1096,65 +916,37 @@ export default function AuditPacketsPageClient({
       {/* ── Section 5: What's Included ── */}
       <Card className="shadow-premium">
         <CardHeader>
-          <CardTitle
-            className="text-lg font-bold"
-            style={{ fontFamily: "'Satoshi', sans-serif" }}
-          >
+          <CardTitle className="text-lg font-bold" style={{ fontFamily: "'Satoshi', sans-serif" }}>
             What&apos;s Included in an Audit Packet
           </CardTitle>
           <CardDescription>
-            Each packet is a comprehensive compliance artifact ready for
-            regulatory review
+            Each packet is a comprehensive compliance artifact ready for regulatory review
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <IncludedItem
-              icon={
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5m.75-9 3-3 2.148 2.148A12.061 12.061 0 0 1 16.5 7.605"
-                />
-              }
+              icon={<path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5m.75-9 3-3 2.148 2.148A12.061 12.061 0 0 1 16.5 7.605" />}
               title="Executive Summary"
-              description="Clinic information, overall compliance score, vendor overview, and key findings at a glance."
+              description="Clinic info, compliance score, per-vendor status, and HIPAA/MS retention language."
               color="#0F766E"
             />
             <IncludedItem
-              icon={
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
-                />
-              }
+              icon={<path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />}
               title="Contract PDFs"
-              description="All selected BAA documents with executed signatures, terms, and compliance obligations."
+              description="Executed BAA documents — one per selected vendor — with signatures, terms, and hashes intact."
               color="#1D4ED8"
             />
             <IncludedItem
-              icon={
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z"
-                />
-              }
-              title="Audit Trail"
-              description="Chronological log of all compliance actions, contract modifications, and system events."
+              icon={<path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z" />}
+              title="Aggregate Audit Trail"
+              description="Chronological log of every compliance action across all selected BAAs, sourced from the DynamoDB ledger."
               color="#7C3AED"
             />
             <IncludedItem
-              icon={
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z"
-                />
-              }
-              title="Mississippi State Law Addendum"
-              description="Retention requirements per MS Code &sect; 41-9-60, ensuring state-specific compliance for all medical records."
+              icon={<path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />}
+              title="Compliance Matrix"
+              description="45 CFR § 164.504(e)(2) clause-by-clause mapping per vendor — ready for OCR or state auditor review."
               color="#CA8A04"
             />
           </div>
@@ -1167,11 +959,7 @@ export default function AuditPacketsPageClient({
 // ─── Sub-components ─────────────────────────────────────────────────────────
 
 function OptionToggle({
-  label,
-  description,
-  checked,
-  onChange,
-  disabled = false,
+  label, description, checked, onChange, disabled = false,
 }: {
   label: string;
   description: string;
@@ -1200,40 +988,24 @@ function OptionToggle({
   );
 }
 
-function PacketStatusBadge({
-  status,
-}: {
-  status: "complete" | "generating" | "failed";
-}) {
+function PacketStatusBadge({ status }: { status: AuditPacket["status"] }) {
   const styles = {
     complete: "bg-emerald-100 text-emerald-700",
     generating: "bg-blue-100 text-blue-700 animate-pulse",
     failed: "bg-red-100 text-red-700",
-  };
+  } as const;
 
   const labels = {
     complete: "Complete",
     generating: "Generating",
     failed: "Failed",
-  };
+  } as const;
 
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${styles[status]}`}
-    >
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${styles[status]}`}>
       {status === "complete" && (
-        <svg
-          className="mr-1 h-3 w-3"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={2}
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="m4.5 12.75 6 6 9-13.5"
-          />
+        <svg className="mr-1 h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
         </svg>
       )}
       {labels[status]}
@@ -1242,10 +1014,7 @@ function PacketStatusBadge({
 }
 
 function IncludedItem({
-  icon,
-  title,
-  description,
-  color,
+  icon, title, description, color,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -1258,22 +1027,12 @@ function IncludedItem({
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
         style={{ backgroundColor: `${color}15` }}
       >
-        <svg
-          className="h-5 w-5"
-          style={{ color }}
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={1.5}
-          stroke="currentColor"
-        >
+        <svg className="h-5 w-5" style={{ color }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           {icon}
         </svg>
       </div>
       <div>
-        <p
-          className="text-sm font-semibold text-foreground"
-          style={{ fontFamily: "'Satoshi', sans-serif" }}
-        >
+        <p className="text-sm font-semibold text-foreground" style={{ fontFamily: "'Satoshi', sans-serif" }}>
           {title}
         </p>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">

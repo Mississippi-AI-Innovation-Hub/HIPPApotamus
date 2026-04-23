@@ -1,5 +1,10 @@
 import { getRequiredSession } from "@/lib/auth/session";
-import { getVendors, getBAAs, getRecentAuditLogs } from "@/lib/db";
+import {
+  getVendors,
+  getBAAs,
+  getRecentAuditLogs,
+  getAuditPackets,
+} from "@/lib/db";
 import AuditPacketsPageClient from "@/components/dashboard/AuditPacketsPageClient";
 
 export const dynamic = "force-dynamic";
@@ -13,10 +18,11 @@ export const metadata = {
 export default async function AuditPacketsPage() {
   const session = await getRequiredSession();
 
-  const [vendors, baas, auditLogs] = await Promise.all([
+  const [vendors, baas, auditLogs, packets] = await Promise.all([
     getVendors(session.entityId),
     getBAAs(session.entityId),
     getRecentAuditLogs(200),
+    getAuditPackets(session.entityId),
   ]);
 
   return (
@@ -24,6 +30,7 @@ export default async function AuditPacketsPage() {
       vendors={vendors}
       baas={baas}
       auditLogs={auditLogs}
+      initialPackets={packets}
     />
   );
 }

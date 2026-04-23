@@ -250,6 +250,58 @@ export interface Clinic {
   npi: string;
 }
 
+// ─── Audit Packet ─────────────────────────────────────────────────────────────
+
+export type AuditPacketDocumentType =
+  | "executive_summary"
+  | "audit_trail"
+  | "contract"
+  | "compliance_matrix";
+
+export interface AuditPacketDocument {
+  type: AuditPacketDocumentType;
+  /** Display name shown in the UI document list. */
+  name: string;
+  /** S3 key (or dev-mode placeholder). */
+  s3Key: string | null;
+  /** Size in bytes for display; null if unknown. */
+  sizeBytes: number | null;
+  /** Optional — only set for per-BAA documents (contract, compliance_matrix). */
+  baaId: string | null;
+  /** Vendor name for per-BAA docs. */
+  vendorName: string | null;
+}
+
+export interface AuditPacket {
+  id: string;
+  clinicId: string;
+  name: string;
+  /** ISO 8601 timestamp of generation. */
+  generatedAt: string;
+  /** Email or name of the user who generated the packet. */
+  generatedBy: string;
+  /** BAAs included in this packet at generation time (snapshot). */
+  baaIds: string[];
+  /** Optional date range filter applied at generation time. */
+  dateFrom: string | null;
+  dateTo: string | null;
+  options: {
+    includePDFs: boolean;
+    includeAuditTrail: boolean;
+    includeExecutiveSummary: boolean;
+  };
+  /** S3 key of the full ZIP bundle. */
+  s3KeyZip: string | null;
+  /** Per-document references so the UI can download individual files
+   *  without unpacking the ZIP. */
+  documents: AuditPacketDocument[];
+  /** Total uncompressed size of all included PDFs, bytes. */
+  totalSizeBytes: number;
+  status: "generating" | "complete" | "failed";
+  /** Failure reason if status="failed". */
+  errorMessage: string | null;
+}
+
 // ─── Auth / Session ───────────────────────────────────────────────────────────
 
 /**

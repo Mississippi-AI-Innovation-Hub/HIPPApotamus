@@ -3,7 +3,7 @@
  * Used when DYNAMODB_TABLE_NAME is not set.
  * Pre-seeded with Mississippi DOH demo data.
  */
-import type { Vendor, BAA, AuditLog, Clinic, BAAStatus, SigningCertificate, SignedSnapshot } from "@/types";
+import type { Vendor, BAA, AuditLog, Clinic, BAAStatus, SigningCertificate, SignedSnapshot, AuditPacket } from "@/types";
 import { logger } from "@/lib/logger";
 import crypto from "node:crypto";
 
@@ -332,6 +332,7 @@ const store = {
   vendors: new Map<string, Vendor>(VENDORS.map((v) => [v.id, v])),
   baas: new Map<string, BAA>(BAAS.map((b) => [b.id, b])),
   auditLogs: [...AUDIT_LOGS],
+  auditPackets: new Map<string, AuditPacket>(),
 };
 
 // ─── Vendor operations ──────────────────────────────────────────────────────
@@ -497,4 +498,30 @@ export async function updateClinic(
   const updated: Clinic = { ...existing, ...updates, id };
   store.clinics.set(id, updated);
   return updated;
+}
+
+// ─── Audit packet operations ────────────────────────────────────────────────
+
+export async function createAuditPacket(packet: AuditPacket): Promise<AuditPacket> {
+  store.auditPackets.set(packet.id, packet);
+  return packet;
+}
+
+export async function getAuditPacketById(id: string): Promise<AuditPacket | null> {
+  return store.auditPackets.get(id) ?? null;
+}
+
+export async function getAuditPackets(clinicId: string): Promise<AuditPacket[]> {
+  return Array.from(store.auditPackets.values())
+    .filter((p) => p.clinicId === clinicId)
+    .sort((a, b) => b.generatedAt.localeCompare(a.generatedAt));
+}
+
+export async function updateAuditPacket(packet: AuditPacket): Promise<AuditPacket> {
+  store.auditPackets.set(packet.id, packet);
+  return packet;
+}
+
+export async function deleteAuditPacket(id: string): Promise<boolean> {
+  return store.auditPackets.delete(id);
 }

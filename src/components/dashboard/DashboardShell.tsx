@@ -9,7 +9,7 @@ import BAADetailsModal from "@/components/dashboard/BAADetailsModal";
 import VendorList from "@/components/dashboard/VendorList";
 import AddVendorModal from "@/components/dashboard/AddVendorModal";
 import ReminderScheduler from "@/components/dashboard/ReminderScheduler";
-import AuditPacketModal from "@/components/dashboard/AuditPacketModal";
+import Link from "next/link";
 import DevTools from "@/components/dashboard/DevTools";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -64,7 +64,6 @@ export default function DashboardShell({
   const [activeTab, setActiveTab] = useState<Tab>("contracts");
   const [selectedBAA, setSelectedBAA] = useState<BAA | null>(null);
   const [addVendorOpen, setAddVendorOpen] = useState(false);
-  const [auditPacketOpen, setAuditPacketOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [copilotWidth, setCopilotWidth] = useState(380);
   const [isResizing, setIsResizing] = useState(false);
@@ -167,15 +166,15 @@ export default function DashboardShell({
               </p>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setAuditPacketOpen(true)}
+              <Link
+                href="/dashboard/audit-packets"
+                className="inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                 </svg>
                 Audit Packet
-              </Button>
+              </Link>
               <Button onClick={() => setAddVendorOpen(true)} className="bg-[#0F766E] text-white hover:bg-[#0D6560]">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -270,13 +269,6 @@ export default function DashboardShell({
             open={addVendorOpen}
             onClose={() => setAddVendorOpen(false)}
             onSuccess={handleRefresh}
-          />
-
-          <AuditPacketModal
-            open={auditPacketOpen}
-            vendors={vendors}
-            baas={baas}
-            onClose={() => setAuditPacketOpen(false)}
           />
 
           {/* Dev tools — hidden in production */}

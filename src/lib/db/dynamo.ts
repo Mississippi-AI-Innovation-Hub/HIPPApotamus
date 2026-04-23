@@ -13,6 +13,7 @@ import * as vendorsDb from "./vendors";
 import * as baasDb from "./baas";
 import * as auditDb from "./auditLogs";
 import * as clinicDb from "./clinic";
+import * as auditPacketsDb from "./auditPackets";
 
 // Vendor operations
 export const getVendors = USE_DYNAMO ? vendorsDb.getVendors : memory.getVendors;
@@ -41,3 +42,10 @@ export const getRecentAuditLogs = USE_DYNAMO ? auditDb.getRecentAuditLogs : memo
 // Clinic operations
 export const getClinic = USE_DYNAMO ? clinicDb.getClinic : memory.getClinic;
 export const updateClinic = USE_DYNAMO ? clinicDb.updateClinic : memory.updateClinic;
+
+// Audit packet operations
+export const createAuditPacket = USE_DYNAMO ? auditPacketsDb.createAuditPacket : memory.createAuditPacket;
+export const getAuditPacketById = USE_DYNAMO ? auditPacketsDb.getAuditPacketById : memory.getAuditPacketById;
+export const getAuditPackets = USE_DYNAMO ? auditPacketsDb.getAuditPackets : memory.getAuditPackets;
+export const updateAuditPacket = USE_DYNAMO ? auditPacketsDb.updateAuditPacket : memory.updateAuditPacket;
+export const deleteAuditPacket = USE_DYNAMO ? auditPacketsDb.deleteAuditPacket : memory.deleteAuditPacket;

@@ -30,4 +30,9 @@ export {
   getRecentAuditLogs,
   getClinic,
   updateClinic,
+  createAuditPacket,
+  getAuditPacketById,
+  getAuditPackets,
+  updateAuditPacket,
+  deleteAuditPacket,
 } from "./dynamo";
