@@ -2,8 +2,12 @@
 
 # dependencies
 /node_modules
+docs/pitch_deck/node_modules/
 /.pnp
 .pnp.*
+
+# PowerPoint lock files
+~$*.pptx
 .yarn/*
 !.yarn/patches
 !.yarn/plugins

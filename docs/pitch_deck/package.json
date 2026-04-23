@@ -1,0 +1,13 @@
+{
+  "name": "hipaapotamus-pitch-deck",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Source and build config for the HIPAApotamus PowerPoint deck",
+  "scripts": {
+    "build": "node build_pitch_deck.js"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1",
+    "pptxgenjs": "^4.0.1"
+  }
+}
