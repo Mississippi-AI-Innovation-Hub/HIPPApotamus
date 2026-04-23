@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { BAA, Vendor } from "@/types";
 import { useToast } from "@/components/ui/Toast";
 import {
   computeReminderEvents,
+  reminderKey,
   type ReminderEvent,
   type ReminderKind,
 } from "@/lib/reminders/policy";
@@ -13,10 +15,6 @@ interface ReminderSchedulerProps {
   baas: BAA[];
   vendors: Vendor[];
 }
-
-const CLINIC_NAME = "Central Mississippi Health District";
-const ADMIN_EMAIL = "bipuladk60+clinic@gmail.com";
-const HIPAA_OFFICER_NAME = "James Tran";
 
 function formatDate(dateStr: string): string {
   try {
@@ -28,6 +26,20 @@ function formatDate(dateStr: string): string {
   } catch {
     return dateStr;
   }
+}
+
+function formatRelativeTime(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 0) return "in the future";
+  const minutes = Math.floor(ms / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min${minutes === 1 ? "" : "s"} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} day${days === 1 ? "" : "s"} ago`;
+  const months = Math.floor(days / 30);
+  return `${months} month${months === 1 ? "" : "s"} ago`;
 }
 
 const KIND_LABEL: Record<ReminderKind, string> = {
@@ -42,74 +54,21 @@ const KIND_COLOR: Record<ReminderKind, string> = {
   pending_countersignature: "bg-orange-100 text-orange-700 border-orange-300",
 };
 
-interface SendPayload {
-  type: string;
-  to: string;
-  params: Record<string, string | number>;
-}
-
-function buildPayload(
-  event: ReminderEvent,
-  vendor: Vendor,
-  origin: string,
-): { primary: SendPayload; recipientLabel: string } {
-  const baseParams = {
-    vendorName: vendor.name,
-    vendorId: vendor.id,
-    contactName: vendor.contactName,
-    clinicName: CLINIC_NAME,
-    baaId: event.baa.id,
-  };
-
-  if (event.kind === "expiration") {
-    return {
-      recipientLabel: vendor.contactEmail,
-      primary: {
-        type: "reminder",
-        to: vendor.contactEmail,
-        params: {
-          ...baseParams,
-          daysUntilExpiration: event.daysRelevant,
-          renewalUrl: `${origin}/sign/${event.baa.id}`,
-        },
-      },
-    };
+async function callSendOne(baaId: string, kind: ReminderKind): Promise<void> {
+  const res = await fetch("/api/reminders/send-one", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ baaId, kind }),
+  });
+  if (!res.ok) {
+    const errData = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(errData.error ?? `Failed (${res.status})`);
   }
-
-  if (event.kind === "pending_signature") {
-    return {
-      recipientLabel: vendor.contactEmail,
-      primary: {
-        type: "pending_signature_reminder",
-        to: vendor.contactEmail,
-        params: {
-          ...baseParams,
-          daysSinceInvitation: event.daysRelevant,
-          signingUrl: `${origin}/sign/${event.baa.id}`,
-        },
-      },
-    };
-  }
-
-  // pending_countersignature → ping the clinic admin/HIPAA officer
-  return {
-    recipientLabel: ADMIN_EMAIL,
-    primary: {
-      type: "pending_countersign_reminder",
-      to: ADMIN_EMAIL,
-      params: {
-        ...baseParams,
-        hipaaOfficerName: HIPAA_OFFICER_NAME,
-        daysSinceVendorSigned: event.daysRelevant,
-        vendorSignerName: event.baa.signedBy ?? vendor.contactName,
-        dashboardUrl: `${origin}/dashboard`,
-      },
-    },
-  };
 }
 
 export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerProps) {
   const { addToast } = useToast();
+  const router = useRouter();
   const [sendingAll, setSendingAll] = useState(false);
   const [sendAllProgress, setSendAllProgress] = useState({ current: 0, total: 0 });
   const [sendingIds, setSendingIds] = useState<Set<string>>(new Set());
@@ -128,20 +87,9 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
     const id = `${evt.baa.id}-${evt.kind}`;
     setSendingIds((prev) => new Set(prev).add(id));
     try {
-      const { primary, recipientLabel } = buildPayload(evt, vendor, window.location.origin);
-
-      const res = await fetch("/api/send-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(primary),
-      });
-
-      if (!res.ok) {
-        const errData = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(errData.error ?? "Failed to send reminder");
-      }
-
-      addToast(`Reminder sent to ${recipientLabel}`, "success");
+      await callSendOne(evt.baa.id, evt.kind);
+      addToast(`Reminder sent for ${vendor.name}`, "success");
+      router.refresh();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to send reminder";
       addToast(`Failed to send reminder for ${vendor.name}: ${message}`, "error");
@@ -167,16 +115,9 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
     for (let i = 0; i < total; i++) {
       const item = events[i];
       setSendAllProgress({ current: i + 1, total });
-
       try {
-        const { primary } = buildPayload(item.evt, item.vendor, window.location.origin);
-        const res = await fetch("/api/send-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(primary),
-        });
-        if (res.ok) success++;
-        else fail++;
+        await callSendOne(item.evt.baa.id, item.evt.kind);
+        success++;
       } catch {
         fail++;
       }
@@ -193,6 +134,7 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
 
     setSendingAll(false);
     setSendAllProgress({ current: 0, total: 0 });
+    router.refresh();
   };
 
   return (
@@ -256,6 +198,10 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
           {events.map(({ evt, vendor }) => {
             const sendingId = `${evt.baa.id}-${evt.kind}`;
             const isSending = sendingIds.has(sendingId);
+            const lastSentIso = evt.baa.reminderHistory?.[reminderKey(evt)] ?? null;
+            const sentRecently =
+              lastSentIso !== null &&
+              Date.now() - new Date(lastSentIso).getTime() < 23 * 60 * 60 * 1000;
 
             return (
               <div
@@ -300,6 +246,16 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
                     {evt.kind === "pending_countersignature" &&
                       `Vendor signed ${evt.daysRelevant} day${evt.daysRelevant === 1 ? "" : "s"} ago — counter-sign required`}
                   </p>
+                  <p
+                    className={`mt-1 text-[11px] font-medium ${
+                      lastSentIso ? "text-slate-500" : "text-slate-400 italic"
+                    }`}
+                    title={lastSentIso ?? undefined}
+                  >
+                    {lastSentIso
+                      ? `Last reminder sent ${formatRelativeTime(lastSentIso)}`
+                      : "No reminder sent yet"}
+                  </p>
                 </div>
 
                 {/* Kind badge */}
@@ -316,13 +272,19 @@ export default function ReminderScheduler({ baas, vendors }: ReminderSchedulerPr
                   type="button"
                   onClick={() => handleSendOne({ evt, vendor })}
                   disabled={isSending}
-                  className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                    sentRecently
+                      ? "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
                 >
                   {isSending ? (
                     <svg className="mx-auto h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
+                  ) : sentRecently ? (
+                    "Resend"
                   ) : (
                     "Send Now"
                   )}
