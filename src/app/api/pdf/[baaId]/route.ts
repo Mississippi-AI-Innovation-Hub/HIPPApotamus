@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { getRequiredSession } from "@/lib/auth/session";
 import { getBAAById, getVendorById, getClinic, addAuditLog } from "@/lib/db";
-import { generateContractPDF, generateAuditPacket } from "@/lib/pdf/generator";
+import {
+  generateContractPDF,
+  generateAuditPacket,
+  fetchSignedPdfFromS3,
+} from "@/lib/pdf/generator";
 import { uploadToS3, getPresignedUrl, getObjectFromS3 } from "@/lib/storage/s3";
 import { logger } from "@/lib/logger";
 import { kmsVerifyDocumentHash, isKmsConfigured } from "@/lib/signing/kms";
@@ -21,7 +25,12 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const format = searchParams.get("format") ?? "pdf"; // "pdf" or "packet"
     const upload = searchParams.get("upload") === "true";
-    const stored = searchParams.get("stored") === "true";
+    // Source-of-truth: the server always prefers the stored signed PDF when
+    // `baa.signedDocumentUrl` is set. The legacy `?stored=true` query param
+    // is preserved for audit-log clarity but is no longer required by callers.
+    // To explicitly bypass the stored copy and force regeneration from data,
+    // pass `?regenerate=true` (used during draft / pre-signature previews).
+    const forceRegenerate = searchParams.get("regenerate") === "true";
 
     const baa = await getBAAById(baaId);
     if (!baa) {
@@ -49,9 +58,12 @@ export async function GET(
       );
     }
 
-    // ── Serve stored signed PDF if requested and available ───────────────────
+    // ── Serve stored signed PDF whenever one exists ─────────────────────────
     // Signed documents are immutable — serve the exact stored copy with integrity check.
-    if (stored && baa.signedDocumentUrl) {
+    // The route is the single source of truth: any caller (BAA modal, audit-packets
+    // preview, future surfaces) automatically gets the signed copy without needing
+    // a query flag. Callers can opt out with `?regenerate=true` for draft previews.
+    if (!forceRegenerate && baa.signedDocumentUrl) {
       logger.info("Attempting to serve stored signed PDF", { baaId, key: baa.signedDocumentUrl, hash: baa.signedDocumentHash });
       try {
         const storedPdf = await getObjectFromS3(baa.signedDocumentUrl);
@@ -162,8 +174,8 @@ export async function GET(
       }
     }
 
-    // If we get here for a signed BAA, S3 fetch failed — log prominently
-    if (baa.signedDate && stored) {
+    // If we get here for a signed BAA, the S3 fetch fell through — log loudly.
+    if (baa.signedDate && baa.signedDocumentUrl && !forceRegenerate) {
       logger.warn("FALLBACK: Regenerating PDF for a SIGNED BAA — S3 stored copy unavailable", {
         baaId,
         signedDocumentUrl: baa.signedDocumentUrl,
@@ -175,14 +187,65 @@ export async function GET(
     await addAuditLog({
       baaId,
       vendorId: baa.vendorId,
-      action: baa.signedDate ? `PDF regenerated (S3 fallback)` : `PDF ${format} generated`,
+      action:
+        baa.signedDate && !forceRegenerate
+          ? `PDF regenerated (S3 fallback)`
+          : `PDF ${format} generated`,
       performedBy: session.name ?? session.email,
-      details: { format, upload, storedAttempted: stored, signedDocumentUrl: baa.signedDocumentUrl },
+      details: {
+        format,
+        upload,
+        forceRegenerate,
+        signedDocumentUrl: baa.signedDocumentUrl,
+      },
       ipAddress: request.headers.get("x-forwarded-for"),
     });
 
     if (format === "packet") {
-      const zipBuffer = await generateAuditPacket(baa, vendor, clinic);
+      // Source-of-truth: if this BAA is signed, fetch the S3 stored signed PDF
+      // (same binary the Preview endpoint serves) and pass it into the audit
+      // packet so `02_BAA_Contract.pdf` matches what the user previewed.
+      // The helper verifies SHA-256 and throws on tamper.
+      let signedPdfBuffer: Buffer | undefined;
+      try {
+        signedPdfBuffer =
+          (await fetchSignedPdfFromS3(baa)) ?? undefined;
+      } catch (integrityErr) {
+        if (
+          integrityErr instanceof Error &&
+          integrityErr.message === "INTEGRITY_CHECK_FAILED"
+        ) {
+          await addAuditLog({
+            baaId,
+            vendorId: baa.vendorId,
+            action: "INTEGRITY_CHECK_FAILED",
+            performedBy: session.name ?? session.email,
+            details: {
+              message:
+                "Hash mismatch on stored signed PDF during audit packet build",
+              context: "audit_packet",
+              key: baa.signedDocumentUrl,
+            },
+            ipAddress: request.headers.get("x-forwarded-for"),
+          });
+          return NextResponse.json(
+            {
+              error:
+                "Security Alert: Document integrity verification failed for audit packet. The stored signed PDF may have been tampered with. This incident has been logged.",
+              code: "INTEGRITY_CHECK_FAILED",
+            },
+            { status: 409 },
+          );
+        }
+        throw integrityErr;
+      }
+
+      const zipBuffer = await generateAuditPacket(
+        baa,
+        vendor,
+        clinic,
+        signedPdfBuffer,
+      );
 
       if (upload) {
         const key = `baas/${baaId}/audit_packet_${Date.now()}.zip`;

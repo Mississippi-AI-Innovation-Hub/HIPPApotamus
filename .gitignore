@@ -53,3 +53,6 @@ cdk/node_modules/
 *.tsbuildinfo
 next-env.d.ts
 .gstack/
+
+# Claude Code session metadata
+.claude/

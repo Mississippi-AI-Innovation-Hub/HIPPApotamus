@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import React from "react";
 import type { ReactElement } from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
@@ -14,8 +15,53 @@ import { populate as populateMSDH } from "@/lib/baa/templates/populate";
 import { getTemplate } from "@/lib/baa/templates/registry";
 import { generateComplianceMatrix } from "@/lib/baa/cfrMatrix";
 import { getAuditLogsByBAA } from "@/lib/db/auditLogs";
+import { getObjectFromS3 } from "@/lib/storage/s3";
 import { logger } from "@/lib/logger";
 import type { BAA, Vendor, Clinic, AuditLog } from "@/types";
+
+/**
+ * Fetch the BAA's stored signed PDF from S3 and verify its SHA-256 against
+ * the recorded `signedDocumentHash`. Returns the buffer if everything checks
+ * out; returns `null` if the BAA isn't signed yet, has no S3 key, or the
+ * fetch fails. Throws on integrity-check failure so callers can decide how
+ * to handle a tampered document.
+ */
+export async function fetchSignedPdfFromS3(
+  baa: BAA,
+): Promise<Buffer | null> {
+  if (!baa.signedDocumentUrl) return null;
+  try {
+    const stored = await getObjectFromS3(baa.signedDocumentUrl);
+    if (!stored) return null;
+    const buf = Buffer.from(stored);
+    if (baa.signedDocumentHash) {
+      const computed = crypto.createHash("sha256").update(buf).digest("hex");
+      if (computed !== baa.signedDocumentHash) {
+        logger.error(
+          "SECURITY ALERT: Stored signed PDF SHA-256 mismatch — possible tampering",
+          {
+            baaId: baa.id,
+            expectedHash: baa.signedDocumentHash,
+            computedHash: computed,
+            key: baa.signedDocumentUrl,
+          },
+        );
+        throw new Error("INTEGRITY_CHECK_FAILED");
+      }
+    }
+    return buf;
+  } catch (err) {
+    if (err instanceof Error && err.message === "INTEGRITY_CHECK_FAILED") {
+      throw err;
+    }
+    logger.warn("Failed to fetch stored signed PDF from S3", {
+      baaId: baa.id,
+      key: baa.signedDocumentUrl,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null;
+  }
+}
 
 /**
  * Helper to cast component elements to the type expected by renderToBuffer.
@@ -121,13 +167,25 @@ export async function generateContractPDF(
 /**
  * Generate a full audit packet ZIP containing:
  * - Executive summary PDF
- * - BAA contract PDF
+ * - BAA contract PDF (the SIGNED + COUNTER-SIGNED copy from S3 if available)
  * - Audit trail PDF
+ * - Compliance matrix PDF
+ *
+ * **Source of truth.** When the BAA has been signed, callers should pass the
+ * exact S3-stored signed PDF buffer via `signedPdfBuffer`. This is the same
+ * binary the Preview-PDF endpoint serves — guaranteeing the audit packet's
+ * `02_BAA_Contract.pdf` is byte-identical to what the user previewed.
+ *
+ * If `signedPdfBuffer` is not provided, the contract is regenerated from the
+ * template + data (no signatures embedded). This is the right behavior for
+ * unsigned BAAs but is wrong for signed ones — callers MUST fetch the S3
+ * stored copy when `baa.signedDocumentUrl` is set.
  */
 export async function generateAuditPacket(
   baa: BAA,
   vendor: Vendor,
   clinic: Clinic,
+  signedPdfBuffer?: Buffer,
 ): Promise<Buffer> {
   try {
     const generatedAt = new Date().toISOString();
@@ -136,10 +194,29 @@ export async function generateAuditPacket(
     // Generate compliance matrix
     const matrix = generateComplianceMatrix(baa);
 
+    // The contract slot uses the stored signed PDF when supplied (single
+    // source of truth with the Preview endpoint). Otherwise we regenerate
+    // from data — only correct for unsigned BAAs.
+    const contractPromise: Promise<Buffer> = signedPdfBuffer
+      ? Promise.resolve(signedPdfBuffer)
+      : generateContractPDF(baa, vendor, clinic);
+
+    if (signedPdfBuffer) {
+      logger.info("Audit packet using S3 stored signed PDF", {
+        baaId: baa.id,
+        bytes: signedPdfBuffer.length,
+      });
+    } else if (baa.signedDocumentUrl) {
+      logger.warn(
+        "Audit packet REGENERATING contract for a signed BAA — caller did not pass signedPdfBuffer",
+        { baaId: baa.id, signedDocumentUrl: baa.signedDocumentUrl },
+      );
+    }
+
     // Generate all four PDFs in parallel
     const [contractBuffer, auditTrailBuffer, summaryBuffer, matrixBuffer] =
       await Promise.all([
-        generateContractPDF(baa, vendor, clinic),
+        contractPromise,
         renderToBuffer(
           asPdfElement(
             React.createElement(AuditTrailPDF, {
@@ -313,7 +390,36 @@ export async function generateAggregateAuditPacket(
         const vendor = vendorsById[baa.vendorId];
         if (!vendor) continue;
 
-        const contractBuf = await generateContractPDF(baa, vendor, clinic);
+        // Source-of-truth: prefer the signed PDF in S3 (same binary served by
+        // the Preview-PDF endpoint). Only regenerate from data when there is
+        // no stored signed copy (BAA still pending signature, or fetch fails).
+        let contractBuf: Buffer | null = null;
+        try {
+          contractBuf = await fetchSignedPdfFromS3(baa);
+        } catch (integrityErr) {
+          logger.error(
+            "Aggregate audit packet: integrity check FAILED for stored signed PDF — skipping this BAA's contract",
+            {
+              baaId: baa.id,
+              error:
+                integrityErr instanceof Error
+                  ? integrityErr.message
+                  : String(integrityErr),
+            },
+          );
+          // Fall through to regeneration so the packet still produces *something*
+          // for this BAA, but log loudly. The auditor will see the regenerated
+          // unsigned copy and the integrity failure event in the audit trail.
+        }
+        if (!contractBuf) {
+          if (baa.signedDocumentUrl) {
+            logger.warn(
+              "Aggregate audit packet: regenerating contract for SIGNED BAA — S3 stored copy unavailable",
+              { baaId: baa.id, signedDocumentUrl: baa.signedDocumentUrl },
+            );
+          }
+          contractBuf = await generateContractPDF(baa, vendor, clinic);
+        }
         parts.push({
           type: "contract",
           name: `BAA — ${vendor.name}`,
