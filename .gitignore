@@ -26,6 +26,7 @@
 # misc
 .DS_Store
 *.pem
+vendor-backup-*.json
 
 # debug
 npm-debug.log*
@@ -55,3 +56,6 @@ next-env.d.ts
 
 # Claude Code session metadata
 .claude/
+
+# Local closeout tracker (not for public repo)
+.cursor/

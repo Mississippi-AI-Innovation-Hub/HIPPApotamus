@@ -1,12 +1,33 @@
 # HIPAApotamus
 
-> HIPAA Business Associate Agreement (BAA) management system built for the **Mississippi Department of Health** in partnership with the AI Innovation Hub.
+> HIPAA Business Associate Agreement (BAA) management system built for the **Mississippi Department of Health** in partnership with the Mississippi AI Innovation Hub.
 
-HIPAApotamus helps healthcare organizations track vendor contracts, automate expiration reminders, collect e-signatures, and generate AI-assisted audit packets — all in a HIPAA-conscious, audit-ready workflow.
+This repository contains the code and documentation for an AI Innovation Hub Proof of Concept focused on HIPAA BAA compliance management. The PoC was developed to explore whether an AI-assisted workflow could help the Mississippi Department of Health track vendor contracts, automate expiration reminders, collect e-signatures, and generate audit-ready documentation — all in a HIPAA-conscious prototype environment. The project demonstrates feasibility within a limited prototype scope and is not a production-ready solution.
 
 ---
 
-## Architecture
+## Agency Problem
+
+The Mississippi Department of Health manages Business Associate Agreements with dozens of vendors who handle protected health information. Tracking contract expiration dates, collecting signatures, sending reminders, and assembling audit packets is a time-intensive manual process. Missed or expired BAAs create compliance exposure under HIPAA 45 CFR 164.504(e).
+
+---
+
+## PoC Scope and Demonstrated Capabilities
+
+| Capability | Status |
+|---|---|
+| BAA lifecycle tracking (create → sign → counter-sign → executed) | Demonstrated |
+| Vendor e-signature collection via email link | Demonstrated |
+| PDF generation and secure document storage (S3) | Demonstrated |
+| Automated expiration reminder emails (90/30/7 days) | Demonstrated |
+| AI-generated audit packet summarization (OpenAI GPT-4o) | Demonstrated |
+| Role-based access (clinic admin vs. vendor signing) | Demonstrated |
+| Cryptographic document audit trail (SHA-256 hash per signing event) | Demonstrated |
+| MSDH 164.504(e)(2) BAA template compliance matrix | Demonstrated |
+
+---
+
+## Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -16,7 +37,6 @@ HIPAApotamus helps healthcare organizations track vendor contracts, automate exp
                             │ HTTPS
 ┌───────────────────────────▼─────────────────────────────────┐
 │                    Next.js Server (App Router)                │
-│                                                              │
 │  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐  │
 │  │  Route       │  │  Auth.js v5  │  │   AI Agent Layer  │  │
 │  │  Handlers    │  │  (Cognito)   │  │   (OpenAI SDK)    │  │
@@ -25,7 +45,6 @@ HIPAApotamus helps healthcare organizations track vendor contracts, automate exp
           │                │                   │
 ┌─────────▼────────────────▼───────────────────▼──────────────┐
 │                         AWS Services                          │
-│                                                              │
 │  ┌───────────┐  ┌───────────┐  ┌──────────┐  ┌──────────┐  │
 │  │ DynamoDB  │  │ Cognito   │  │    S3    │  │   SES    │  │
 │  │ (data)    │  │ (auth)    │  │  (docs)  │  │ (email)  │  │
@@ -33,9 +52,7 @@ HIPAApotamus helps healthcare organizations track vendor contracts, automate exp
 └─────────────────────────────────────────────────────────────┘
 ```
 
----
-
-## Tech Stack
+**Tech Stack**
 
 | Layer | Technology |
 |---|---|
@@ -46,87 +63,142 @@ HIPAApotamus helps healthcare organizations track vendor contracts, automate exp
 | Database | Amazon DynamoDB (AWS SDK v3) |
 | File Storage | Amazon S3 |
 | Email | Amazon SES |
-| AI | OpenAI API |
-| Voice | ElevenLabs |
-| Hosting | AWS (CDK — Milestone 10) |
+| AI | OpenAI API (GPT-4o) |
+| Infrastructure | AWS CDK (TypeScript) |
+
+See [`docs/architecture.md`](docs/architecture.md) for the full architecture and signing ceremony data flow.
 
 ---
 
-## Local Setup
+## Repository Structure
 
-### Prerequisites
+```
+HIPAApotamus/
+├── README.md
+├── LICENSE
+├── CHANGELOG.md
+├── .env.example          # Placeholder config — fill in with your own values
+├── docs/
+│   ├── architecture.md   # System architecture and signing flow
+│   ├── setup.md          # Setup and deployment instructions
+│   ├── testing.md        # Validation notes and test results
+│   ├── data-notes.md     # Data publication guidance
+│   ├── limitations.md    # PoC scope limits and disclaimer
+│   ├── images/           # Architecture diagrams and screenshots
+│   └── ELECTRONIC_SIGNATURE_ARCHITECTURE.md  # Detailed e-sig architecture
+├── src/
+│   ├── app/              # Next.js App Router pages and API routes
+│   ├── components/       # React UI components
+│   ├── lib/              # AWS clients, auth, AI, PDF, email utilities
+│   └── types/            # TypeScript type definitions
+├── cdk/                  # AWS CDK infrastructure stack
+├── scripts/
+│   ├── seed.ts           # Synthetic demo data seeder
+│   └── reset.ts          # Database reset utility
+└── demos/
+    └── screenshots/      # UI screenshots for documentation
+```
 
-- Node.js 20+
-- An AWS account with Cognito, DynamoDB, S3, and SES configured
-- An OpenAI API key
+---
 
-### Steps
+## Setup
+
+See [`docs/setup.md`](docs/setup.md) for full instructions. Quick start:
 
 ```bash
-# 1. Clone the repo
-git clone https://github.com/your-org/hipaapotamus.git
-cd hipaapotamus
-
-# 2. Install dependencies
+git clone https://github.com/aryalsushant/HIPAApotamus.git
+cd HIPAApotamus
 npm install
-
-# 3. Configure environment variables
 cp .env.example .env.local
-# Edit .env.local and fill in all values (see table below)
-
-# 4. Start the dev server
+# Fill in .env.local with your AWS and API credentials
 npm run dev
 ```
 
-The app will be available at `http://localhost:3000`.
+The app runs at `http://localhost:3000`.
 
 ---
 
-## Environment Variables
+## Configuration
 
-| Variable | Description | Where to get it |
-|---|---|---|
-| `AUTH_SECRET` | Secret for signing Auth.js session tokens | `openssl rand -base64 32` |
-| `AUTH_URL` | Public URL of this app | `http://localhost:3000` in dev |
-| `AWS_REGION` | AWS region for all resources | AWS Console |
-| `AWS_ACCESS_KEY_ID` | IAM access key (dev only; use IAM roles in prod) | AWS IAM |
-| `AWS_SECRET_ACCESS_KEY` | IAM secret key (dev only) | AWS IAM |
-| `COGNITO_USER_POOL_ID` | Cognito User Pool ID | AWS Cognito Console |
-| `COGNITO_CLIENT_ID` | Cognito App Client ID | AWS Cognito Console → App clients |
-| `COGNITO_CLIENT_SECRET` | Cognito App Client Secret | AWS Cognito Console → App clients |
-| `COGNITO_ISSUER` | OIDC issuer URL for the User Pool | `https://cognito-idp.<region>.amazonaws.com/<pool-id>` |
-| `DYNAMODB_TABLE_NAME` | Primary DynamoDB table name | AWS DynamoDB Console |
-| `S3_BUCKET_NAME` | S3 bucket for BAA documents | AWS S3 Console |
-| `SES_FROM_EMAIL` | Verified sender email for SES | AWS SES Console → Verified identities |
-| `OPENAI_API_KEY` | OpenAI API key for AI agent | [platform.openai.com](https://platform.openai.com) |
-| `ELEVENLABS_API_KEY` | ElevenLabs API key | [elevenlabs.io](https://elevenlabs.io) |
-| `ELEVENLABS_VOICE_ID` | ElevenLabs voice ID | ElevenLabs dashboard |
-| `NEXT_PUBLIC_APP_URL` | Client-visible app URL | Same as `AUTH_URL` |
-| `NEXT_PUBLIC_APP_NAME` | App display name | e.g. `HIPAApotamus` |
+All configuration is through environment variables. Copy `.env.example` to `.env.local` and fill in the values. Required variables:
+
+| Variable | Purpose |
+|---|---|
+| `AUTH_SECRET` | Auth.js session signing key |
+| `AWS_REGION` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | AWS SDK credentials |
+| `COGNITO_USER_POOL_ID` / `COGNITO_CLIENT_ID` / `COGNITO_CLIENT_SECRET` / `COGNITO_ISSUER` | Cognito auth |
+| `DYNAMODB_TABLE_NAME` | DynamoDB table name |
+| `S3_BUCKET_NAME` | S3 bucket for signed documents |
+| `SES_FROM_EMAIL` | Verified SES sender address |
+| `OPENAI_API_KEY` | OpenAI key for audit packet generation |
+
+Never commit real credentials. Use IAM roles in production instead of static access keys.
 
 ---
 
-## Deployment
+## Data Notes
 
-> Deployment infrastructure will be documented in **Milestone 10** using AWS CDK.
+This repository does not include real data. Any included datasets are placeholder samples or illustrative only.
 
-Placeholder sections:
-- CDK stack location: `cdk/`
-- Target: AWS App Runner or ECS Fargate
-- CI/CD: GitHub Actions
+The `scripts/seed.ts` script populates DynamoDB with fully synthetic vendor and BAA records for demonstration purposes. No real Mississippi Department of Health data, patient records, or protected health information is included anywhere in this repository.
+
+See [`docs/data-notes.md`](docs/data-notes.md) for full details.
 
 ---
 
-## Security
+## Usage
 
-- **No secrets are ever committed.** All credentials live in `.env.local` (gitignored) or AWS Secrets Manager in production.
-- `.env.example` contains only placeholder values — never real keys.
-- IAM credentials should only be used locally. In production, attach IAM roles to the compute resource directly.
-- All S3 BAA documents are private and accessed via pre-signed URLs only.
-- Auth is handled entirely through Amazon Cognito — passwords are never stored in the application database.
+1. Start the dev server: `npm run dev`
+2. Log in at `http://localhost:3000` using a Cognito user
+3. Seed demo data: `npx tsx scripts/seed.ts`
+4. From the dashboard: create a BAA, send it for signature, complete the signing flow, then generate an audit packet
+
+Core user flows are documented in [`docs/testing.md`](docs/testing.md).
+
+---
+
+## Testing and Evaluation
+
+The PoC was validated through manual functional testing against a live AWS sandbox environment using synthetic data. Core flows tested:
+
+- BAA creation → vendor signing → counter-signature → fully-executed PDF
+- Reminder email delivery (manual trigger; cron via EventBridge)
+- AI audit packet generation (single and multi-BAA)
+- Auth flow (Cognito OIDC → session → protected routes)
+
+No automated test suite was implemented in this PoC. See [`docs/testing.md`](docs/testing.md) for full validation notes and known gaps.
+
+---
+
+## Limitations
+
+This PoC was developed within a limited timeline and controlled environment. It may contain simplified workflows, mock integrations, limited testing coverage, and prototype user interfaces.
+
+Key out-of-scope items: multi-tenancy, formal HIPAA risk assessment, WAF/VPC security hardening, and WCAG accessibility audit.
+
+See [`docs/limitations.md`](docs/limitations.md) for the full list.
+
+---
+
+## Disclaimer
+
+This repository contains code and supporting materials developed as part of a Mississippi Artificial Intelligence Innovation Hub Proof of Concept project. The contents are provided for prototype demonstration purposes. They are not production ready by default and may include simplified workflows, incomplete security guardrails, placeholder integrations, or reduced controls appropriate only for a Proof-of-Concept environment.
+
+**This software should not be used with production data or in production environments without additional architecture, security, privacy, testing, and stakeholder review.**
 
 ---
 
 ## License
 
-Private — Mississippi Department of Health / AI Innovation Hub. Not for public distribution.
+MIT License — see [`LICENSE`](LICENSE) for full terms.
+
+---
+
+## Contributors
+
+- Sushant Aryal
+- Bipul Adhikari
+- Prastab Ghimire
+- Jeevan Karki
+
+Developed in partnership with the **Mississippi AI Innovation Hub** and the **Mississippi Department of Health**.
