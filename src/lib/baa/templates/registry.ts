@@ -24,7 +24,7 @@ register({
   effectiveDate: "2026-01-01",
   approvedBy: "MSDH Office of General Counsel",
   supersedes: null,
-  sourceDocument: "RFP #4635 Attachment C — MSDH Business Associate Agreement (ITS Project No. 48420)",
+  sourceDocument: "docs/BAA template.docx — MSDH Business Associate Agreement (ITS Project No. 48420)",
   cfrMappings: CFR_MAPPINGS,
   changeLog: [
     "Initial port from RFP #4635 Attachment C",

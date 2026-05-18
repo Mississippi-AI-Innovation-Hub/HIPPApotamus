@@ -1,7 +1,7 @@
 /**
  * MSDH BAA Template v2026.1
  *
- * Ported verbatim from RFP #4635 Attachment C — "MSDH Business Associate Agreement"
+ * Ported verbatim from docs/BAA template.docx — "MSDH Business Associate Agreement"
  * ITS Project No. 48420
  *
  * Placeholders use {{DOUBLE_BRACE}} syntax for the ~10 fill-in fields.
